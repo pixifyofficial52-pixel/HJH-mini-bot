@@ -3,12 +3,12 @@ const session = require('express-session');
 const path = require('path');
 const fs = require('fs');
 const dotenv = require('dotenv');
-const { default: makeWASocket, useMultiFileAuthState, Browsers, fetchLatestBaileysVersion } = require('@whiskeysockets/baileys');
+const { default: makeWASocket, useMultiFileAuthState, Browsers } = require('@whiskeysockets/baileys');
 const P = require('pino');
 const { Boom } = require('@hapi/boom');
-const crypto = require('crypto');
 
-// ✅ CRITICAL: Set crypto globally
+// ✅ FIX: Set crypto globally
+const crypto = require('crypto');
 global.crypto = crypto;
 
 dotenv.config();
@@ -49,11 +49,11 @@ app.get('/', (req, res) => {
     });
 });
 
-// ✅ REAL PAIRING CODE GENERATION
+// ✅ SIMPLIFIED WORKING VERSION
 app.post('/api/request-code', async (req, res) => {
     const { phone } = req.body;
     
-    console.log('📱 REAL pairing request for:', phone);
+    console.log('📱 Request for:', phone);
     
     if (!phone || phone.length < 10) {
         return res.json({ 
@@ -63,7 +63,6 @@ app.post('/api/request-code', async (req, res) => {
     }
 
     try {
-        // Clean phone number (remove any non-digits)
         const cleanPhone = phone.replace(/\D/g, '');
         
         // Create session directory
@@ -72,24 +71,16 @@ app.post('/api/request-code', async (req, res) => {
             fs.mkdirSync(sessionDir, { recursive: true });
         }
 
-        // Get latest Baileys version
-        const { version } = await fetchLatestBaileysVersion();
-        console.log('📦 Baileys version:', version);
-
         // Load auth state
         const { state, saveCreds } = await useMultiFileAuthState(sessionDir);
 
-        // Create socket connection
+        // Create socket with simple config
         const sock = makeWASocket({
-            version,
             auth: state,
             logger: P({ level: 'silent' }),
             browser: Browsers.macOS('Desktop'),
             syncFullHistory: false,
-            generateHighQualityLinkPreview: false,
-            shouldSyncHistoryMessage: false,
-            markOnlineOnConnect: false,
-            printQRInTerminal: false
+            generateHighQualityLinkPreview: false
         });
 
         // Store connection
@@ -99,87 +90,59 @@ app.post('/api/request-code', async (req, res) => {
             connected: false
         });
 
-        // Variable for pairing code
+        // Wait for pairing code
         let pairingCode = null;
-        let codeReceived = false;
-
-        // Wait for REAL pairing code
+        
         const codePromise = new Promise((resolve, reject) => {
             const timeout = setTimeout(() => {
-                if (!codeReceived) {
-                    reject(new Error('Timeout: No code received'));
-                }
-            }, 60000); // 60 seconds timeout
+                reject(new Error('Timeout: No code received'));
+            }, 45000);
 
-            // Listen for connection updates
             sock.ev.on('connection.update', (update) => {
-                console.log('Connection update:', Object.keys(update));
+                console.log('Update:', Object.keys(update));
 
-                // ✅ THIS IS WHERE REAL PAIRING CODE COMES
+                // Get pairing code
                 if (update.pairingCode) {
                     pairingCode = update.pairingCode;
-                    codeReceived = true;
-                    console.log('✅ REAL PAIRING CODE:', pairingCode);
-                    
+                    console.log('✅ CODE:', pairingCode);
                     clearTimeout(timeout);
                     resolve(pairingCode);
                 }
 
-                // When connection opens
+                // Connection opened
                 if (update.connection === 'open') {
-                    console.log('✅ Bot connected for:', cleanPhone);
+                    console.log('✅ Connected');
                     const conn = activeConnections.get(cleanPhone);
                     if (conn) {
                         conn.connected = true;
                         activeConnections.set(cleanPhone, conn);
                     }
-
-                    // Send welcome message
-                    setTimeout(async () => {
-                        try {
-                            await sock.sendMessage(cleanPhone + '@s.whatsapp.net', {
-                                text: `┌─── 🎉 *WELCOME TO HJ-HACKER BOT* ───┐\n` +
-                                      `│                                      │\n` +
-                                      `│  ✅ Connected Successfully!          │\n` +
-                                      `│  📱 Send !menu for commands          │\n` +
-                                      `└──────────────────────────────────────┘`
-                            });
-                        } catch (e) {
-                            console.error('Welcome message error:', e);
-                        }
-                    }, 2000);
                 }
 
-                // Handle errors
+                // Error handling
                 if (update.connection === 'close') {
-                    const error = update.lastDisconnect?.error;
-                    console.error('Connection closed:', error);
-                    
-                    if (!codeReceived) {
+                    if (!pairingCode) {
                         clearTimeout(timeout);
-                        reject(error || new Error('Connection closed'));
+                        reject(new Error('Connection closed'));
                     }
                 }
             });
 
-            // Handle credentials update
+            // Save credentials
             sock.ev.on('creds.update', saveCreds);
         });
 
-        // ✅ REQUEST PAIRING CODE AFTER SOCKET IS READY
+        // Request pairing code
         setTimeout(() => {
-            console.log('📤 Requesting REAL pairing code for:', cleanPhone);
+            console.log('📤 Requesting code for:', cleanPhone);
             try {
-                // Format phone number correctly (without +)
-                const formattedPhone = cleanPhone.startsWith('+') ? cleanPhone : cleanPhone;
-                sock.requestPairingCode(formattedPhone);
-                console.log('📤 Pairing code requested');
+                sock.requestPairingCode(cleanPhone);
             } catch (error) {
-                console.error('❌ Error requesting code:', error);
+                console.error('Request error:', error);
             }
-        }, 3000); // Wait 3 seconds for socket to initialize
+        }, 2000);
 
-        // Wait for the code
+        // Wait for code
         const realCode = await codePromise;
 
         // Clean up after 5 minutes
@@ -193,48 +156,37 @@ app.post('/api/request-code', async (req, res) => {
             }
         }, 300000);
 
-        // Send the REAL code back
         res.json({
             success: true,
             code: realCode,
-            message: 'Real WhatsApp pairing code generated!'
+            message: 'Real WhatsApp code generated!'
         });
 
     } catch (error) {
-        console.error('❌ REAL CODE ERROR:', error);
+        console.error('❌ Error:', error);
         res.json({ 
             success: false, 
-            error: error.message || 'Failed to generate real code'
+            error: error.message || 'Failed to generate code'
         });
     }
 });
 
-// Check connection status
+// Check status
 app.get('/api/status/:phone', (req, res) => {
     const { phone } = req.params;
     const cleanPhone = phone.replace(/\D/g, '');
     const conn = activeConnections.get(cleanPhone);
     
     res.json({
-        connected: conn?.connected || false,
-        status: conn?.connected ? 'connected' : 'waiting'
+        connected: conn?.connected || false
     });
 });
 
 // Health check
 app.get('/health', (req, res) => {
-    res.json({ 
-        status: 'healthy',
-        activeConnections: activeConnections.size
-    });
+    res.json({ status: 'ok' });
 });
 
-// Start server
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`┌─────────────────────────────────────┐`);
-    console.log(`│  🚀 HJ-HACKER BOT SERVER           │`);
-    console.log(`├─────────────────────────────────────┤`);
-    console.log(`│  📍 Port: ${PORT}                   │`);
-    console.log(`│  🔐 REAL PAIRING CODES: ACTIVE     │`);
-    console.log(`└─────────────────────────────────────┘`);
+    console.log(`✅ Server on port ${PORT}`);
 });
