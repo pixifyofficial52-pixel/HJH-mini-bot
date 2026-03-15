@@ -7,6 +7,10 @@ const { default: makeWASocket, useMultiFileAuthState, Browsers } = require('@whi
 const P = require('pino');
 const { Boom } = require('@hapi/boom');
 
+// ✅ FIX: Explicitly require crypto
+const crypto = require('crypto');
+global.crypto = crypto;
+
 dotenv.config();
 
 const app = express();
@@ -48,7 +52,7 @@ app.get('/', (req, res) => {
     });
 });
 
-// ✅ FIXED: Generate REAL pairing code
+// Generate REAL pairing code
 app.post('/api/request-code', async (req, res) => {
     const { phone } = req.body;
     
@@ -62,7 +66,7 @@ app.post('/api/request-code', async (req, res) => {
     }
 
     try {
-        // Clean phone number (remove any non-digits)
+        // Clean phone number
         const cleanPhone = phone.replace(/\D/g, '');
         
         // Create session directory
@@ -74,14 +78,16 @@ app.post('/api/request-code', async (req, res) => {
         // Load auth state
         const { state, saveCreds } = await useMultiFileAuthState(sessionDir);
 
-        // Create socket connection
+        // Create socket connection with crypto fix
         const sock = makeWASocket({
             auth: state,
             logger: P({ level: 'silent' }),
             browser: Browsers.macOS('Desktop'),
             syncFullHistory: false,
             generateHighQualityLinkPreview: false,
-            shouldSyncHistoryMessage: false
+            shouldSyncHistoryMessage: false,
+            // ✅ Add crypto to options
+            crypto: crypto
         });
 
         // Variable to store pairing code
@@ -95,7 +101,7 @@ app.post('/api/request-code', async (req, res) => {
             }, 30000);
 
             sock.ev.on('connection.update', async (update) => {
-                const { connection, lastDisconnect, qr } = update;
+                const { connection, lastDisconnect } = update;
 
                 if (update.pairingCode) {
                     pairingCode = update.pairingCode;
@@ -137,19 +143,9 @@ app.post('/api/request-code', async (req, res) => {
                     console.log('Connection closed, reconnecting:', shouldReconnect);
                 }
             });
-
-            // Handle errors
-            sock.ev.on('connection.update', (update) => {
-                if (update.connection === 'close') {
-                    const error = update.lastDisconnect?.error;
-                    if (error) {
-                        reject(error);
-                    }
-                }
-            });
         });
 
-        // Request pairing code after socket is ready
+        // Request pairing code
         setTimeout(() => {
             try {
                 sock.requestPairingCode(cleanPhone);
@@ -159,7 +155,7 @@ app.post('/api/request-code', async (req, res) => {
             }
         }, 2000);
 
-        // Wait for code with timeout
+        // Wait for code
         const code = await Promise.race([
             codePromise,
             new Promise((_, reject) => 
@@ -176,7 +172,7 @@ app.post('/api/request-code', async (req, res) => {
                 }
                 pairingSessions.delete(cleanPhone);
             }
-        }, 300000); // 5 minutes
+        }, 300000);
 
         res.json({
             success: true,
@@ -214,17 +210,6 @@ app.get('/health', (req, res) => {
         activeSessions: pairingSessions.size,
         botName: process.env.BOT_NAME || 'HJ-HACKER'
     });
-});
-
-// 404 handler
-app.use((req, res) => {
-    res.status(404).json({ error: 'Route not found' });
-});
-
-// Error handler
-app.use((err, req, res, next) => {
-    console.error('Server error:', err);
-    res.status(500).json({ error: 'Internal server error' });
 });
 
 // Start server
