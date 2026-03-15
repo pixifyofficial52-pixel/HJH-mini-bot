@@ -3,12 +3,12 @@ const session = require('express-session');
 const path = require('path');
 const fs = require('fs');
 const dotenv = require('dotenv');
-const { default: makeWASocket, useMultiFileAuthState, Browsers } = require('@whiskeysockets/baileys');
+const { default: makeWASocket, useMultiFileAuthState, Browsers, fetchLatestBaileysVersion } = require('@whiskeysockets/baileys');
 const P = require('pino');
 const { Boom } = require('@hapi/boom');
-
-// ✅ FIX: Explicitly require crypto
 const crypto = require('crypto');
+
+// ✅ Fix: Set crypto globally
 global.crypto = crypto;
 
 dotenv.config();
@@ -52,7 +52,7 @@ app.get('/', (req, res) => {
     });
 });
 
-// Generate REAL pairing code
+// ✅ FIXED: Generate REAL pairing code
 app.post('/api/request-code', async (req, res) => {
     const { phone } = req.body;
     
@@ -65,6 +65,8 @@ app.post('/api/request-code', async (req, res) => {
         });
     }
 
+    let sock = null;
+    
     try {
         // Clean phone number
         const cleanPhone = phone.replace(/\D/g, '');
@@ -75,38 +77,54 @@ app.post('/api/request-code', async (req, res) => {
             fs.mkdirSync(sessionDir, { recursive: true });
         }
 
+        // Get latest version
+        const { version, isLatest } = await fetchLatestBaileysVersion();
+        console.log(`📦 Using Baileys version: ${version}`);
+
         // Load auth state
         const { state, saveCreds } = await useMultiFileAuthState(sessionDir);
 
-        // Create socket connection with crypto fix
-        const sock = makeWASocket({
+        // Create socket connection
+        sock = makeWASocket({
+            version,
             auth: state,
             logger: P({ level: 'silent' }),
             browser: Browsers.macOS('Desktop'),
             syncFullHistory: false,
             generateHighQualityLinkPreview: false,
             shouldSyncHistoryMessage: false,
-            // ✅ Add crypto to options
-            crypto: crypto
+            markOnlineOnConnect: false,
+            printQRInTerminal: false
         });
 
         // Variable to store pairing code
         let pairingCode = null;
-        let codeGenerated = false;
+        let codeResolved = false;
 
         // Wait for pairing code
         const codePromise = new Promise((resolve, reject) => {
             const timeout = setTimeout(() => {
-                reject(new Error('Connection timeout'));
-            }, 30000);
+                if (!codeResolved) {
+                    reject(new Error('Timeout generating code'));
+                }
+            }, 60000); // 60 seconds timeout
 
+            // Handle connection updates
             sock.ev.on('connection.update', async (update) => {
-                const { connection, lastDisconnect } = update;
+                const { connection, lastDisconnect, qr } = update;
 
+                // ✅ This is where pairing code comes
                 if (update.pairingCode) {
                     pairingCode = update.pairingCode;
-                    codeGenerated = true;
-                    console.log('✅ Real Pairing Code:', pairingCode);
+                    codeResolved = true;
+                    console.log('✅ REAL Pairing Code:', pairingCode);
+                    
+                    clearTimeout(timeout);
+                    resolve(pairingCode);
+                }
+
+                if (connection === 'open') {
+                    console.log('✅ Bot connected for:', cleanPhone);
                     
                     // Store session
                     pairingSessions.set(cleanPhone, {
@@ -115,13 +133,6 @@ app.post('/api/request-code', async (req, res) => {
                         time: Date.now()
                     });
 
-                    clearTimeout(timeout);
-                    resolve(pairingCode);
-                }
-
-                if (connection === 'open') {
-                    console.log('✅ Bot connected for:', cleanPhone);
-                    
                     // Send welcome message
                     setTimeout(async () => {
                         try {
@@ -141,29 +152,45 @@ app.post('/api/request-code', async (req, res) => {
                 if (connection === 'close') {
                     const shouldReconnect = (lastDisconnect?.error instanceof Boom)?.output?.statusCode !== 401;
                     console.log('Connection closed, reconnecting:', shouldReconnect);
+                    
+                    if (!codeResolved) {
+                        clearTimeout(timeout);
+                        reject(new Error('Connection closed'));
+                    }
+                }
+            });
+
+            // Handle errors
+            sock.ev.on('connection.update', (update) => {
+                if (update.connection === 'close' && update.lastDisconnect?.error) {
+                    if (!codeResolved) {
+                        clearTimeout(timeout);
+                        reject(update.lastDisconnect.error);
+                    }
                 }
             });
         });
 
-        // Request pairing code
+        // ✅ CRITICAL: Request pairing code AFTER socket is ready
+        console.log('⏳ Waiting for socket to be ready...');
+        
         setTimeout(() => {
-            try {
-                sock.requestPairingCode(cleanPhone);
-                console.log('📤 Pairing code requested for:', cleanPhone);
-            } catch (error) {
-                console.error('❌ Error requesting pairing code:', error);
+            if (sock && !codeResolved) {
+                try {
+                    console.log('📤 Requesting pairing code for:', cleanPhone);
+                    // Make sure phone number is in correct format (without +)
+                    const formattedPhone = cleanPhone.startsWith('+') ? cleanPhone : cleanPhone;
+                    sock.requestPairingCode(formattedPhone);
+                } catch (error) {
+                    console.error('❌ Error requesting pairing code:', error);
+                }
             }
-        }, 2000);
+        }, 3000); // Wait 3 seconds before requesting
 
         // Wait for code
-        const code = await Promise.race([
-            codePromise,
-            new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('Timeout generating code')), 25000)
-            )
-        ]);
+        const code = await codePromise;
 
-        // Clean up old sessions
+        // Clean up old sessions after 5 minutes
         setTimeout(() => {
             if (pairingSessions.has(cleanPhone)) {
                 const session = pairingSessions.get(cleanPhone);
@@ -182,6 +209,14 @@ app.post('/api/request-code', async (req, res) => {
 
     } catch (error) {
         console.error('❌ Pairing error:', error);
+        
+        // Clean up socket if it exists
+        if (sock) {
+            try {
+                sock.end();
+            } catch (e) {}
+        }
+        
         res.status(500).json({ 
             success: false, 
             error: error.message || 'Failed to generate code'
@@ -198,7 +233,7 @@ app.get('/api/status/:phone', (req, res) => {
     res.json({
         connected: session?.sock?.user ? true : false,
         status: session?.sock?.user ? 'connected' : 'waiting',
-        time: session?.time || null
+        user: session?.sock?.user || null
     });
 });
 
