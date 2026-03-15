@@ -1,0 +1,23 @@
+{
+  "name": "hjhacker-whatsapp-bot",
+  "version": "2.0.0",
+  "description": "HJ-HACKER Professional WhatsApp Bot",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "ejs": "^3.1.9",
+    "@whiskeysockets/baileys": "^6.5.0",
+    "@hapi/boom": "^10.0.1",
+    "pino": "^8.17.2",
+    "qrcode-terminal": "^0.12.0",
+    "axios": "^1.6.2",
+    "dotenv": "^16.3.1",
+    "express-session": "^1.17.3"
+  },
+  "engines": {
+    "node": "18.x"
+  }
+}
