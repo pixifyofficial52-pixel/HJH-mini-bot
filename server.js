@@ -1,192 +1,93 @@
 const express = require('express');
-const session = require('express-session');
 const path = require('path');
 const fs = require('fs');
 const dotenv = require('dotenv');
 const { default: makeWASocket, useMultiFileAuthState, Browsers } = require('@whiskeysockets/baileys');
 const P = require('pino');
-const { Boom } = require('@hapi/boom');
-
-// ✅ FIX: Set crypto globally
-const crypto = require('crypto');
-global.crypto = crypto;
+const QRCode = require('qrcode');
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-// Session
-app.use(session({
-    secret: process.env.SESSION_SECRET || 'hjhacker_super_secret',
-    resave: false,
-    saveUninitialized: true,
-    cookie: { maxAge: 600000 }
-}));
-
-// View engine
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
+app.use(express.static('public'));
 
-// Create auth directory
 const authDir = path.join(__dirname, 'auth');
-if (!fs.existsSync(authDir)) {
-    fs.mkdirSync(authDir, { recursive: true });
-}
+if (!fs.existsSync(authDir)) fs.mkdirSync(authDir, { recursive: true });
 
-// Store active connections
-const activeConnections = new Map();
-
-// ========== ROUTES ==========
+const sessions = new Map();
 
 app.get('/', (req, res) => {
-    res.render('login', {
+    res.render('qr-login', {
         botName: process.env.BOT_NAME || 'HJ-HACKER'
     });
 });
 
-// ✅ SIMPLIFIED WORKING VERSION
-app.post('/api/request-code', async (req, res) => {
-    const { phone } = req.body;
-    
-    console.log('📱 Request for:', phone);
-    
-    if (!phone || phone.length < 10) {
-        return res.json({ 
-            success: false, 
-            error: 'Valid phone number required' 
-        });
-    }
-
+app.post('/api/start-session', async (req, res) => {
     try {
-        const cleanPhone = phone.replace(/\D/g, '');
+        const sessionId = Date.now().toString();
+        const sessionDir = path.join(authDir, sessionId);
         
-        // Create session directory
-        const sessionDir = path.join(authDir, cleanPhone);
-        if (!fs.existsSync(sessionDir)) {
-            fs.mkdirSync(sessionDir, { recursive: true });
-        }
-
-        // Load auth state
         const { state, saveCreds } = await useMultiFileAuthState(sessionDir);
-
-        // Create socket with simple config
+        
         const sock = makeWASocket({
             auth: state,
             logger: P({ level: 'silent' }),
             browser: Browsers.macOS('Desktop'),
-            syncFullHistory: false,
-            generateHighQualityLinkPreview: false
+            syncFullHistory: false
         });
 
-        // Store connection
-        activeConnections.set(cleanPhone, {
-            sock,
-            time: Date.now(),
-            connected: false
-        });
+        sessions.set(sessionId, { sock, qr: null, connected: false });
 
-        // Wait for pairing code
-        let pairingCode = null;
-        
-        const codePromise = new Promise((resolve, reject) => {
+        // Wait for QR code
+        const qrPromise = new Promise((resolve, reject) => {
             const timeout = setTimeout(() => {
-                reject(new Error('Timeout: No code received'));
-            }, 45000);
+                reject(new Error('QR timeout'));
+            }, 60000);
 
             sock.ev.on('connection.update', (update) => {
-                console.log('Update:', Object.keys(update));
-
-                // Get pairing code
-                if (update.pairingCode) {
-                    pairingCode = update.pairingCode;
-                    console.log('✅ CODE:', pairingCode);
+                if (update.qr) {
+                    console.log('✅ QR generated');
                     clearTimeout(timeout);
-                    resolve(pairingCode);
+                    resolve(update.qr);
                 }
-
-                // Connection opened
+                
                 if (update.connection === 'open') {
-                    console.log('✅ Connected');
-                    const conn = activeConnections.get(cleanPhone);
-                    if (conn) {
-                        conn.connected = true;
-                        activeConnections.set(cleanPhone, conn);
-                    }
-                }
-
-                // Error handling
-                if (update.connection === 'close') {
-                    if (!pairingCode) {
-                        clearTimeout(timeout);
-                        reject(new Error('Connection closed'));
+                    const session = sessions.get(sessionId);
+                    if (session) {
+                        session.connected = true;
+                        sessions.set(sessionId, session);
                     }
                 }
             });
 
-            // Save credentials
             sock.ev.on('creds.update', saveCreds);
         });
 
-        // Request pairing code
-        setTimeout(() => {
-            console.log('📤 Requesting code for:', cleanPhone);
-            try {
-                sock.requestPairingCode(cleanPhone);
-            } catch (error) {
-                console.error('Request error:', error);
-            }
-        }, 2000);
-
-        // Wait for code
-        const realCode = await codePromise;
-
-        // Clean up after 5 minutes
-        setTimeout(() => {
-            if (activeConnections.has(cleanPhone)) {
-                const conn = activeConnections.get(cleanPhone);
-                if (conn.sock) {
-                    conn.sock.end();
-                }
-                activeConnections.delete(cleanPhone);
-            }
-        }, 300000);
+        const qrString = await qrPromise;
+        const qrImage = await QRCode.toDataURL(qrString);
 
         res.json({
             success: true,
-            code: realCode,
-            message: 'Real WhatsApp code generated!'
+            sessionId,
+            qr: qrImage
         });
 
     } catch (error) {
-        console.error('❌ Error:', error);
-        res.json({ 
-            success: false, 
-            error: error.message || 'Failed to generate code'
-        });
+        res.json({ success: false, error: error.message });
     }
 });
 
-// Check status
-app.get('/api/status/:phone', (req, res) => {
-    const { phone } = req.params;
-    const cleanPhone = phone.replace(/\D/g, '');
-    const conn = activeConnections.get(cleanPhone);
-    
+app.get('/api/status/:sessionId', (req, res) => {
+    const session = sessions.get(req.params.sessionId);
     res.json({
-        connected: conn?.connected || false
+        connected: session?.connected || false
     });
 });
 
-// Health check
-app.get('/health', (req, res) => {
-    res.json({ status: 'ok' });
-});
-
-app.listen(PORT, '0.0.0.0', () => {
+app.listen(PORT, () => {
     console.log(`✅ Server on port ${PORT}`);
 });
