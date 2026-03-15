@@ -3,16 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= botName %> - WhatsApp Bot</title>
+    <title><%= botName %> - QR Login</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: system-ui, -apple-system, sans-serif;
+            font-family: system-ui, sans-serif;
         }
-
         body {
             min-height: 100vh;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -21,381 +20,168 @@
             justify-content: center;
             padding: 20px;
         }
-
         .card {
             background: white;
             border-radius: 30px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             max-width: 500px;
             width: 100%;
-            overflow: hidden;
-        }
-
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 40px 30px;
+            padding: 40px;
             text-align: center;
-            color: white;
         }
-
-        .header i {
-            font-size: 60px;
-            margin-bottom: 20px;
-            background: rgba(255,255,255,0.2);
-            padding: 20px;
-            border-radius: 30px;
-        }
-
-        .header h1 {
-            font-size: 32px;
-            margin-bottom: 10px;
-        }
-
-        .features {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            justify-content: center;
-            margin-top: 20px;
-        }
-
-        .feature {
-            background: rgba(255,255,255,0.2);
-            padding: 5px 15px;
-            border-radius: 50px;
-            font-size: 12px;
-        }
-
-        .content {
-            padding: 40px 30px;
-        }
-
-        .info-box {
-            background: #f5f5f5;
-            border-radius: 20px;
-            padding: 25px;
-            text-align: center;
-            margin-bottom: 30px;
-            border: 2px dashed #667eea;
-        }
-
-        .info-box i {
-            font-size: 40px;
+        h1 {
             color: #667eea;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
         }
-
-        .steps {
-            display: flex;
-            justify-content: space-around;
-            margin-top: 20px;
-            gap: 10px;
-        }
-
-        .step {
-            flex: 1;
-            text-align: center;
-        }
-
-        .step-number {
-            width: 30px;
-            height: 30px;
-            background: #667eea;
-            color: white;
-            border-radius: 50%;
+        .qr-container {
+            background: #f5f5f5;
+            padding: 30px;
+            border-radius: 20px;
+            margin: 30px 0;
+            min-height: 300px;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0 auto 5px;
-            font-weight: bold;
         }
-
-        .input-group {
-            margin-bottom: 20px;
-        }
-
-        .input-group label {
-            display: block;
-            margin-bottom: 10px;
-            color: #555;
-            font-weight: 500;
-        }
-
-        .input-group input {
+        .qr-image {
+            max-width: 250px;
             width: 100%;
-            padding: 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 15px;
-            font-size: 16px;
         }
-
-        .input-group input:focus {
-            border-color: #667eea;
-            outline: none;
-        }
-
         .btn {
-            width: 100%;
-            padding: 15px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
+            padding: 15px 30px;
             border-radius: 15px;
             font-size: 16px;
-            font-weight: 600;
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-
-        .btn:disabled {
-            opacity: 0.7;
-            cursor: not-allowed;
-        }
-
-        .code-container {
-            background: #1a1a1a;
-            border-radius: 20px;
-            padding: 30px;
-            margin-top: 30px;
-            text-align: center;
-            display: none;
-        }
-
-        .code-container.show {
-            display: block;
-        }
-
-        .code {
-            font-size: 48px;
-            font-weight: bold;
-            letter-spacing: 10px;
-            color: #4caf50;
-            font-family: monospace;
-            margin: 20px 0;
-        }
-
-        .copy-btn {
-            background: #4caf50;
-            color: white;
-            border: none;
-            padding: 10px 25px;
-            border-radius: 50px;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
+            width: 100%;
             margin: 10px 0;
         }
-
-        .status {
-            margin-top: 15px;
+        .steps {
+            display: flex;
+            justify-content: space-between;
+            margin: 20px 0;
+            color: #666;
+        }
+        .step {
+            flex: 1;
             padding: 10px;
+            border-bottom: 3px solid #ddd;
+        }
+        .step.active {
+            border-bottom-color: #667eea;
+            color: #667eea;
+            font-weight: bold;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 15px;
             border-radius: 10px;
             display: none;
         }
-
-        .status.show {
-            display: block;
-        }
-
         .status.success {
             background: #4caf50;
             color: white;
+            display: block;
         }
-
-        .status.warning {
-            background: #ff9800;
-            color: white;
-        }
-
         .loader {
             border: 3px solid #f3f3f3;
             border-top: 3px solid #667eea;
             border-radius: 50%;
-            width: 30px;
-            height: 30px;
+            width: 40px;
+            height: 40px;
             animation: spin 1s linear infinite;
             margin: 20px auto;
-            display: none;
         }
-
-        .loader.show {
-            display: block;
-        }
-
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
-        }
-
-        .footer {
-            text-align: center;
-            padding: 20px;
-            background: #f5f5f5;
-            color: #666;
-        }
-
-        .note {
-            color: #999;
-            font-size: 12px;
-            margin-top: 15px;
         }
     </style>
 </head>
 <body>
     <div class="card">
-        <div class="header">
-            <i class="fas fa-robot"></i>
-            <h1><%= botName %> <span style="font-size: 14px; background: rgba(255,255,255,0.2); padding: 5px 10px; border-radius: 50px;">BOT</span></h1>
-            <p>Real WhatsApp Pairing Code</p>
-            <div class="features">
-                <span class="feature"><i class="fas fa-shield-alt"></i> Anti Delete</span>
-                <span class="feature"><i class="fas fa-eye-slash"></i> Anti View Once</span>
-                <span class="feature"><i class="fas fa-download"></i> DP Download</span>
-                <span class="feature"><i class="fas fa-eye"></i> Status Views</span>
-            </div>
+        <i class="fas fa-robot" style="font-size: 60px; color: #667eea; margin-bottom: 20px;"></i>
+        <h1><%= botName %></h1>
+        <p>Scan QR Code to connect</p>
+        
+        <div class="steps">
+            <div class="step active" id="step1">1. Start</div>
+            <div class="step" id="step2">2. Scan</div>
+            <div class="step" id="step3">3. Connected</div>
         </div>
         
-        <div class="content">
-            <div class="info-box">
-                <i class="fas fa-mobile-alt"></i>
-                <h3>Real Device Code Login</h3>
-                <p>Enter your phone number to get REAL 8-digit WhatsApp code</p>
-                <div class="steps">
-                    <div class="step"><div class="step-number">1</div><small>Enter Number</small></div>
-                    <div class="step"><div class="step-number">2</div><small>Get Real Code</small></div>
-                    <div class="step"><div class="step-number">3</div><small>Link Device</small></div>
-                    <div class="step"><div class="step-number">4</div><small>Bot Active</small></div>
-                </div>
-            </div>
-            
-            <div class="input-group">
-                <label><i class="fas fa-phone-alt"></i> Your WhatsApp Number</label>
-                <input type="text" id="phone" placeholder="923001234567" value="92300">
-                <small class="note">Format: 923001234567 (with country code)</small>
-            </div>
-            
-            <button class="btn" onclick="getRealCode()" id="generateBtn">
-                <i class="fas fa-qrcode"></i> Generate REAL Code
-            </button>
-            
-            <div class="code-container" id="codeContainer">
-                <i class="fas fa-check-circle" style="color: #4caf50; font-size: 40px;"></i>
-                <h3 style="color: white; margin: 10px 0;">Your REAL 8-Digit Code</h3>
-                <div class="code" id="codeDisplay">--------</div>
-                <button class="copy-btn" onclick="copyCode()" id="copyBtn">
-                    <i class="fas fa-copy"></i> Copy Code
-                </button>
-                <div class="loader" id="loader"></div>
-                <div class="status" id="status"></div>
-                <p style="color: #999; margin-top: 15px;">
-                    <i class="fas fa-info-circle"></i> Open WhatsApp → Linked Devices → Link with phone number
-                </p>
-            </div>
+        <div class="qr-container" id="qrContainer">
+            <div class="loader" id="loader"></div>
+            <img id="qrImage" class="qr-image" style="display: none;">
         </div>
         
-        <div class="footer">
-            <p>© 2024 <%= botName %> • Real WhatsApp Code</p>
-        </div>
+        <button class="btn" onclick="startSession()" id="startBtn">
+            <i class="fas fa-qrcode"></i> Generate QR Code
+        </button>
+        
+        <div class="status" id="status"></div>
     </div>
 
     <script>
+        let sessionId = null;
         let checkInterval;
 
-        async function getRealCode() {
-            const phone = document.getElementById('phone').value;
-            const btn = document.getElementById('generateBtn');
-            const codeContainer = document.getElementById('codeContainer');
-            const codeDisplay = document.getElementById('codeDisplay');
+        async function startSession() {
+            const btn = document.getElementById('startBtn');
             const loader = document.getElementById('loader');
+            const qrImage = document.getElementById('qrImage');
             const status = document.getElementById('status');
-            const copyBtn = document.getElementById('copyBtn');
             
-            if (!phone || phone.length < 10) {
-                alert('❌ Valid phone number required!');
-                return;
-            }
-            
-            // Disable button
             btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating REAL Code...';
-            
-            // Show container
-            codeContainer.classList.add('show');
-            loader.classList.add('show');
-            codeDisplay.textContent = '--------';
-            copyBtn.style.display = 'none';
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+            loader.style.display = 'block';
+            qrImage.style.display = 'none';
             status.style.display = 'none';
             
             try {
-                const response = await fetch('/api/request-code', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ phone })
-                });
+                const res = await fetch('/api/start-session', { method: 'POST' });
+                const data = await res.json();
                 
-                const data = await response.json();
-                
-                loader.classList.remove('show');
+                loader.style.display = 'none';
                 
                 if (data.success) {
-                    // Show REAL code
-                    codeDisplay.textContent = data.code;
-                    copyBtn.style.display = 'inline-flex';
+                    sessionId = data.sessionId;
+                    qrImage.src = data.qr;
+                    qrImage.style.display = 'block';
+                    btn.innerHTML = '<i class="fas fa-check"></i> QR Generated';
                     
-                    status.className = 'status warning';
-                    status.innerHTML = '<i class="fas fa-clock"></i> Waiting for connection... Open WhatsApp and enter this code';
-                    status.classList.add('show');
+                    document.getElementById('step1').classList.remove('active');
+                    document.getElementById('step2').classList.add('active');
                     
-                    btn.innerHTML = '<i class="fas fa-check"></i> REAL Code Generated';
-                    
-                    // Check connection status every 3 seconds
                     checkInterval = setInterval(async () => {
-                        const statusRes = await fetch(`/api/status/${phone.replace(/\D/g, '')}`);
+                        const statusRes = await fetch(`/api/status/${sessionId}`);
                         const statusData = await statusRes.json();
                         
                         if (statusData.connected) {
                             clearInterval(checkInterval);
+                            document.getElementById('step2').classList.remove('active');
+                            document.getElementById('step3').classList.add('active');
+                            
                             status.className = 'status success';
                             status.innerHTML = '<i class="fas fa-check-circle"></i> Bot Connected Successfully!';
-                            
-                            setTimeout(() => {
-                                codeContainer.classList.remove('show');
-                                btn.disabled = false;
-                                btn.innerHTML = '<i class="fas fa-qrcode"></i> Generate REAL Code';
-                            }, 5000);
                         }
                     }, 3000);
                     
                 } else {
                     btn.disabled = false;
-                    btn.innerHTML = '<i class="fas fa-qrcode"></i> Generate REAL Code';
-                    codeContainer.classList.remove('show');
-                    alert('❌ Error: ' + data.error);
+                    btn.innerHTML = '<i class="fas fa-qrcode"></i> Generate QR Code';
+                    alert('Error: ' + data.error);
                 }
                 
             } catch (error) {
-                loader.classList.remove('show');
+                loader.style.display = 'none';
                 btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-qrcode"></i> Generate REAL Code';
-                codeContainer.classList.remove('show');
-                alert('❌ Network error');
+                btn.innerHTML = '<i class="fas fa-qrcode"></i> Generate QR Code';
+                alert('Network error');
             }
         }
-
-        function copyCode() {
-            const code = document.getElementById('codeDisplay').textContent;
-            navigator.clipboard.writeText(code).then(() => {
-                alert('✅ REAL code copied!');
-            });
-        }
-
-        window.addEventListener('beforeunload', () => {
-            if (checkInterval) clearInterval(checkInterval);
-        });
     </script>
 </body>
 </html>
