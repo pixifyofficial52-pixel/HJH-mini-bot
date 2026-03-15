@@ -206,8 +206,8 @@
             color: white;
         }
 
-        .status.error {
-            background: #f44336;
+        .status.warning {
+            background: #ff9800;
             color: white;
         }
 
@@ -237,6 +237,12 @@
             background: #f5f5f5;
             color: #666;
         }
+
+        .note {
+            color: #999;
+            font-size: 12px;
+            margin-top: 15px;
+        }
     </style>
 </head>
 <body>
@@ -244,7 +250,7 @@
         <div class="header">
             <i class="fas fa-robot"></i>
             <h1><%= botName %> <span style="font-size: 14px; background: rgba(255,255,255,0.2); padding: 5px 10px; border-radius: 50px;">BOT</span></h1>
-            <p>WhatsApp Mini Bot</p>
+            <p>Real WhatsApp Pairing Code</p>
             <div class="features">
                 <span class="feature"><i class="fas fa-shield-alt"></i> Anti Delete</span>
                 <span class="feature"><i class="fas fa-eye-slash"></i> Anti View Once</span>
@@ -256,28 +262,29 @@
         <div class="content">
             <div class="info-box">
                 <i class="fas fa-mobile-alt"></i>
-                <h3>Device Code Login</h3>
-                <p>Enter your phone number to get 8-digit code</p>
+                <h3>Real Device Code Login</h3>
+                <p>Enter your phone number to get REAL 8-digit WhatsApp code</p>
                 <div class="steps">
                     <div class="step"><div class="step-number">1</div><small>Enter Number</small></div>
-                    <div class="step"><div class="step-number">2</div><small>Get Code</small></div>
+                    <div class="step"><div class="step-number">2</div><small>Get Real Code</small></div>
                     <div class="step"><div class="step-number">3</div><small>Link Device</small></div>
-                    <div class="step"><div class="step-number">4</div><small>Start Bot</small></div>
+                    <div class="step"><div class="step-number">4</div><small>Bot Active</small></div>
                 </div>
             </div>
             
             <div class="input-group">
                 <label><i class="fas fa-phone-alt"></i> Your WhatsApp Number</label>
                 <input type="text" id="phone" placeholder="923001234567" value="92300">
+                <small class="note">Format: 923001234567 (with country code)</small>
             </div>
             
-            <button class="btn" onclick="getCode()" id="generateBtn">
-                <i class="fas fa-qrcode"></i> Generate Code
+            <button class="btn" onclick="getRealCode()" id="generateBtn">
+                <i class="fas fa-qrcode"></i> Generate REAL Code
             </button>
             
             <div class="code-container" id="codeContainer">
                 <i class="fas fa-check-circle" style="color: #4caf50; font-size: 40px;"></i>
-                <h3 style="color: white; margin: 10px 0;">Your 8-Digit Code</h3>
+                <h3 style="color: white; margin: 10px 0;">Your REAL 8-Digit Code</h3>
                 <div class="code" id="codeDisplay">--------</div>
                 <button class="copy-btn" onclick="copyCode()" id="copyBtn">
                     <i class="fas fa-copy"></i> Copy Code
@@ -291,14 +298,14 @@
         </div>
         
         <div class="footer">
-            <p>© 2024 <%= botName %> • 100% Free</p>
+            <p>© 2024 <%= botName %> • Real WhatsApp Code</p>
         </div>
     </div>
 
     <script>
         let checkInterval;
 
-        async function getCode() {
+        async function getRealCode() {
             const phone = document.getElementById('phone').value;
             const btn = document.getElementById('generateBtn');
             const codeContainer = document.getElementById('codeContainer');
@@ -314,7 +321,7 @@
             
             // Disable button
             btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating REAL Code...';
             
             // Show container
             codeContainer.classList.add('show');
@@ -335,16 +342,17 @@
                 loader.classList.remove('show');
                 
                 if (data.success) {
+                    // Show REAL code
                     codeDisplay.textContent = data.code;
                     copyBtn.style.display = 'inline-flex';
                     
-                    status.className = 'status';
-                    status.innerHTML = '<i class="fas fa-clock"></i> Waiting for connection... Enter code in WhatsApp';
+                    status.className = 'status warning';
+                    status.innerHTML = '<i class="fas fa-clock"></i> Waiting for connection... Open WhatsApp and enter this code';
                     status.classList.add('show');
                     
-                    btn.innerHTML = '<i class="fas fa-check"></i> Code Generated';
+                    btn.innerHTML = '<i class="fas fa-check"></i> REAL Code Generated';
                     
-                    // Check status every 3 seconds
+                    // Check connection status every 3 seconds
                     checkInterval = setInterval(async () => {
                         const statusRes = await fetch(`/api/status/${phone.replace(/\D/g, '')}`);
                         const statusData = await statusRes.json();
@@ -357,14 +365,14 @@
                             setTimeout(() => {
                                 codeContainer.classList.remove('show');
                                 btn.disabled = false;
-                                btn.innerHTML = '<i class="fas fa-qrcode"></i> Generate Code';
+                                btn.innerHTML = '<i class="fas fa-qrcode"></i> Generate REAL Code';
                             }, 5000);
                         }
                     }, 3000);
                     
                 } else {
                     btn.disabled = false;
-                    btn.innerHTML = '<i class="fas fa-qrcode"></i> Generate Code';
+                    btn.innerHTML = '<i class="fas fa-qrcode"></i> Generate REAL Code';
                     codeContainer.classList.remove('show');
                     alert('❌ Error: ' + data.error);
                 }
@@ -372,7 +380,7 @@
             } catch (error) {
                 loader.classList.remove('show');
                 btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-qrcode"></i> Generate Code';
+                btn.innerHTML = '<i class="fas fa-qrcode"></i> Generate REAL Code';
                 codeContainer.classList.remove('show');
                 alert('❌ Network error');
             }
@@ -381,7 +389,7 @@
         function copyCode() {
             const code = document.getElementById('codeDisplay').textContent;
             navigator.clipboard.writeText(code).then(() => {
-                alert('✅ Code copied!');
+                alert('✅ REAL code copied!');
             });
         }
 
