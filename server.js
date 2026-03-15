@@ -5,6 +5,7 @@ const fs = require('fs');
 const dotenv = require('dotenv');
 const { default: makeWASocket, useMultiFileAuthState, Browsers } = require('@whiskeysockets/baileys');
 const P = require('pino');
+const { Boom } = require('@hapi/boom');
 
 dotenv.config();
 
@@ -14,11 +15,10 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static('public'));
 
 // Session
 app.use(session({
-    secret: process.env.SESSION_SECRET || 'hjhacker_secret',
+    secret: process.env.SESSION_SECRET || 'hjhacker_super_secret',
     resave: false,
     saveUninitialized: true,
     cookie: { maxAge: 600000 }
@@ -27,6 +27,12 @@ app.use(session({
 // View engine
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
+
+// Create auth directory
+const authDir = path.join(__dirname, 'auth');
+if (!fs.existsSync(authDir)) {
+    fs.mkdirSync(authDir, { recursive: true });
+}
 
 // Store active pairing sessions
 const pairingSessions = new Map();
@@ -42,29 +48,31 @@ app.get('/', (req, res) => {
     });
 });
 
-// Generate REAL pairing code
+// ✅ FIXED: Generate REAL pairing code
 app.post('/api/request-code', async (req, res) => {
     const { phone } = req.body;
     
+    console.log('📱 Pairing request for:', phone);
+    
     if (!phone || phone.length < 10) {
-        return res.json({ 
+        return res.status(400).json({ 
             success: false, 
             error: 'Valid phone number required' 
         });
     }
 
     try {
-        // Clean phone number
+        // Clean phone number (remove any non-digits)
         const cleanPhone = phone.replace(/\D/g, '');
         
-        // Create auth directory
-        const authDir = path.join(__dirname, 'auth', cleanPhone);
-        if (!fs.existsSync(authDir)) {
-            fs.mkdirSync(authDir, { recursive: true });
+        // Create session directory
+        const sessionDir = path.join(authDir, cleanPhone);
+        if (!fs.existsSync(sessionDir)) {
+            fs.mkdirSync(sessionDir, { recursive: true });
         }
 
         // Load auth state
-        const { state, saveCreds } = await useMultiFileAuthState(authDir);
+        const { state, saveCreds } = await useMultiFileAuthState(sessionDir);
 
         // Create socket connection
         const sock = makeWASocket({
@@ -76,12 +84,12 @@ app.post('/api/request-code', async (req, res) => {
             shouldSyncHistoryMessage: false
         });
 
-        // Generate REAL pairing code
+        // Variable to store pairing code
         let pairingCode = null;
         let codeGenerated = false;
 
-        // Wait for connection and pairing code
-        const connectionPromise = new Promise((resolve, reject) => {
+        // Wait for pairing code
+        const codePromise = new Promise((resolve, reject) => {
             const timeout = setTimeout(() => {
                 reject(new Error('Connection timeout'));
             }, 30000);
@@ -89,34 +97,10 @@ app.post('/api/request-code', async (req, res) => {
             sock.ev.on('connection.update', async (update) => {
                 const { connection, lastDisconnect, qr } = update;
 
-                if (connection === 'open') {
-                    clearTimeout(timeout);
-                    console.log(`✅ Bot connected for ${cleanPhone}`);
-                    
-                    // Send welcome message
-                    setTimeout(async () => {
-                        try {
-                            await sock.sendMessage(cleanPhone + '@s.whatsapp.net', {
-                                text: `┌─── 🎉 *WELCOME TO ${process.env.BOT_NAME}* ───┐\n` +
-                                      `│                                          │\n` +
-                                      `│  ✅ *Successfully Connected!*            │\n` +
-                                      `│  📱 Use !menu for commands               │\n` +
-                                      `└──────────────────────────────────────────┘`
-                            });
-                        } catch (e) {}
-                    }, 2000);
-                    
-                    resolve({ success: true, code: pairingCode });
-                }
-
-                if (connection === 'connecting') {
-                    console.log(`🔄 Connecting for ${cleanPhone}...`);
-                }
-
                 if (update.pairingCode) {
                     pairingCode = update.pairingCode;
                     codeGenerated = true;
-                    console.log(`📱 Real Pairing Code for ${cleanPhone}: ${pairingCode}`);
+                    console.log('✅ Real Pairing Code:', pairingCode);
                     
                     // Store session
                     pairingSessions.set(cleanPhone, {
@@ -125,38 +109,86 @@ app.post('/api/request-code', async (req, res) => {
                         time: Date.now()
                     });
 
-                    // Auto cleanup after 5 minutes
-                    setTimeout(() => {
-                        if (pairingSessions.has(cleanPhone)) {
-                            const session = pairingSessions.get(cleanPhone);
-                            if (session.sock) {
-                                session.sock.end();
-                            }
-                            pairingSessions.delete(cleanPhone);
+                    clearTimeout(timeout);
+                    resolve(pairingCode);
+                }
+
+                if (connection === 'open') {
+                    console.log('✅ Bot connected for:', cleanPhone);
+                    
+                    // Send welcome message
+                    setTimeout(async () => {
+                        try {
+                            await sock.sendMessage(cleanPhone + '@s.whatsapp.net', {
+                                text: `┌─── 🎉 *WELCOME TO ${process.env.BOT_NAME || 'HJ-HACKER'}* ───┐\n` +
+                                      `│                                          │\n` +
+                                      `│  ✅ *Successfully Connected!*            │\n` +
+                                      `│  📱 Use !menu for commands               │\n` +
+                                      `└──────────────────────────────────────────┘`
+                            });
+                        } catch (e) {
+                            console.error('Welcome message error:', e);
                         }
-                    }, 300000);
+                    }, 2000);
+                }
+
+                if (connection === 'close') {
+                    const shouldReconnect = (lastDisconnect?.error instanceof Boom)?.output?.statusCode !== 401;
+                    console.log('Connection closed, reconnecting:', shouldReconnect);
+                }
+            });
+
+            // Handle errors
+            sock.ev.on('connection.update', (update) => {
+                if (update.connection === 'close') {
+                    const error = update.lastDisconnect?.error;
+                    if (error) {
+                        reject(error);
+                    }
                 }
             });
         });
 
-        // Request pairing code
+        // Request pairing code after socket is ready
         setTimeout(() => {
-            sock.requestPairingCode(cleanPhone);
-        }, 1000);
+            try {
+                sock.requestPairingCode(cleanPhone);
+                console.log('📤 Pairing code requested for:', cleanPhone);
+            } catch (error) {
+                console.error('❌ Error requesting pairing code:', error);
+            }
+        }, 2000);
 
-        const result = await connectionPromise;
-        
+        // Wait for code with timeout
+        const code = await Promise.race([
+            codePromise,
+            new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Timeout generating code')), 25000)
+            )
+        ]);
+
+        // Clean up old sessions
+        setTimeout(() => {
+            if (pairingSessions.has(cleanPhone)) {
+                const session = pairingSessions.get(cleanPhone);
+                if (session.sock) {
+                    session.sock.end();
+                }
+                pairingSessions.delete(cleanPhone);
+            }
+        }, 300000); // 5 minutes
+
         res.json({
             success: true,
-            code: result.code,
+            code: code,
             message: 'Real WhatsApp pairing code generated!'
         });
 
     } catch (error) {
         console.error('❌ Pairing error:', error);
-        res.json({ 
+        res.status(500).json({ 
             success: false, 
-            error: 'Failed to generate code. Please try again.' 
+            error: error.message || 'Failed to generate code'
         });
     }
 });
@@ -164,11 +196,13 @@ app.post('/api/request-code', async (req, res) => {
 // Check connection status
 app.get('/api/status/:phone', (req, res) => {
     const { phone } = req.params;
-    const session = pairingSessions.get(phone);
+    const cleanPhone = phone.replace(/\D/g, '');
+    const session = pairingSessions.get(cleanPhone);
     
     res.json({
         connected: session?.sock?.user ? true : false,
-        status: session ? 'connected' : 'disconnected'
+        status: session?.sock?.user ? 'connected' : 'waiting',
+        time: session?.time || null
     });
 });
 
@@ -177,8 +211,20 @@ app.get('/health', (req, res) => {
     res.json({ 
         status: 'healthy', 
         timestamp: new Date().toISOString(),
-        activeSessions: pairingSessions.size
+        activeSessions: pairingSessions.size,
+        botName: process.env.BOT_NAME || 'HJ-HACKER'
     });
+});
+
+// 404 handler
+app.use((req, res) => {
+    res.status(404).json({ error: 'Route not found' });
+});
+
+// Error handler
+app.use((err, req, res, next) => {
+    console.error('Server error:', err);
+    res.status(500).json({ error: 'Internal server error' });
 });
 
 // Start server
