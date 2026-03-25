@@ -1,5 +1,5 @@
 {
-  "name": "hj-hacker-bot",
+  "name": "hj-hacker-wa-bot",
   "version": "3.0.0",
   "description": "WhatsApp Bot by HJ-HACKER",
   "main": "index.js",
@@ -16,7 +16,6 @@
     "pino": "^8.15.0",
     "fs-extra": "^11.1.1",
     "moment": "^2.29.4",
-    "axios": "^1.6.2",
     "express": "^4.18.2"
   }
 }
