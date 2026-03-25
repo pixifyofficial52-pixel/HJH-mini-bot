@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HJ-HACKER - WhatsApp Manager</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            color: white;
+            min-height: 100vh;
+        }
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+        
+        /* Header */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            padding: 20px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 20px;
+            margin-bottom: 30px;
+        }
+        .logo-area { display: flex; align-items: center; gap: 15px; }
+        .logo { width: 60px; height: 60px; border-radius: 15px; }
+        h1 { background: linear-gradient(135deg, #00ff87, #60efff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .channel-btn {
+            background: #25D366;
+            padding: 10px 20px;
+            border-radius: 30px;
+            text-decoration: none;
+            color: white;
+            font-weight: bold;
+        }
+        
+        /* Stats */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+        }
+        .stat-number { font-size: 2rem; font-weight: bold; color: #00ff87; }
+        
+        /* Sessions Grid */
+        .sessions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .session-card {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+        }
+        .session-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+        .session-number { font-size: 1.2rem; font-weight: bold; color: #60efff; }
+        .delete-btn { background: red; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; color: white; }
+        
+        /* Toggle Switches */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: 0.3s;
+            border-radius: 24px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+        input:checked + .slider { background-color: #00ff87; }
+        input:checked + .slider:before { transform: translateX(26px); }
+        
+        .setting-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 10px 0;
+            padding: 8px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+        }
+        
+        /* Auto Reply Rules */
+        .rule-item {
+            background: rgba(255,255,255,0.05);
+            padding: 8px;
+            margin: 5px 0;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+        }
+        .add-rule {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .add-rule input {
+            flex: 1;
+            padding: 8px;
+            border-radius: 5px;
+            border: none;
+        }
+        button {
+            background: #60efff;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button.danger { background: #ff4444; color: white; }
+        
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background: #1a1a2e;
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 400px;
+        }
+        .modal-content input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border: none;
+        }
+        
+        .footer { text-align: center; margin-top: 40px; padding: 20px; color: #888; }
+        @media (max-width: 768px) { .header { flex-direction: column; gap: 15px; text-align: center; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo-area">
+                <img src="logo.png" class="logo" alt="Logo" onerror="this.src='https://via.placeholder.com/60?text=HJ'">
+                <div>
+                    <h1>HJ-HACKER 🔥</h1>
+                    <small>WhatsApp Automation Suite</small>
+                </div>
+            </div>
+            <a href="https://whatsapp.com/channel/0029VbAaNJ6C1FuB0mIAx93M" target="_blank" class="channel-btn">
+                📢 Join HJH TOOLS Official
+            </a>
+        </div>
+        
+        <!-- Stats -->
+        <div class="stats">
+            <div class="stat-card"><div class="stat-number" id="sessionCount">0</div><div>Sessions Active</div></div>
+            <div class="stat-card"><div class="stat-number" id="ruleCount">0</div><div>Auto Reply Rules</div></div>
+            <div class="stat-card"><div class="stat-number" id="deletedCount">0</div><div>Deleted Messages</div></div>
+        </div>
+        
+        <!-- Sessions Grid -->
+        <h2>📱 Connected Sessions</h2>
+        <div class="sessions-grid" id="sessionsGrid">
+            <div class="session-card add-session" onclick="showPairModal()" style="display: flex; justify-content: center; align-items: center; cursor: pointer;">
+                <div style="text-align: center;">➕<br>Add New Session</div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>© 2024 HJ-HACKER | Made with 🔥 | Features: Auto Reply | Anti Delete | Anti Link | Auto Status | Get DP | View Once Saver</p>
+        </div>
+    </div>
+    
+    <!-- Pair Modal -->
+    <div id="pairModal" class="modal">
+        <div class="modal-content">
+            <h3>➕ Add WhatsApp Session</h3>
+            <input type="text" id="phoneNumber" placeholder="Enter phone number (e.g., 923001234567)" style="width:100%;">
+            <p style="font-size:12px; color:#aaa;">Code will be shown after pairing</p>
+            <button onclick="pairNumber()">Pair Device</button>
+            <button onclick="closeModal()" style="background:#333;">Cancel</button>
+            <div id="pairResult" style="margin-top:10px;"></div>
+        </div>
+    </div>
+    
+    <script>
+        // API Base URL
+        const API = window.location.origin;
+        
+        // Load sessions on page load
+        loadSessions();
+        
+        async function loadSessions() {
+            const res = await fetch(`${API}/api/sessions`);
+            const data = await res.json();
+            const sessions = data.sessions || [];
+            
+            document.getElementById('sessionCount').innerText = sessions.length;
+            
+            let totalRules = 0;
+            sessions.forEach(s => totalRules += (s.settings?.autoReply?.length || 0));
+            document.getElementById('ruleCount').innerText = totalRules;
+            
+            const grid = document.getElementById('sessionsGrid');
+            grid.innerHTML = `
+                <div class="session-card add-session" onclick="showPairModal()" style="display: flex; justify-content: center; align-items: center; cursor: pointer;">
+                    <div style="text-align: center;">➕<br>Add New Session</div>
+                </div>
+            `;
+            
+            for (const session of sessions) {
+                // Load deleted logs count
+                const logsRes = await fetch(`${API}/api/antidelete/logs/${session.id}`);
+                const logsData = await logsRes.json();
+                const deletedCount = logsData.logs?.length || 0;
+                
+                const card = document.createElement('div');
+                card.className = 'session-card';
+                card.innerHTML = `
+                    <div class="session-header">
+                        <span class="session-number">📱 ${session.number}</span>
+                        <button class="delete-btn" onclick="deleteSession('${session.id}')">Delete</button>
+                    </div>
+                    <div class="setting-item">
+                        <span>🛡️ Anti Delete</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" onchange="toggleAntiDelete('${session.id}', this.checked)" ${session.settings.antiDelete ? 'checked' : ''}>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <span>🔗 Anti Link</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" onchange="toggleAntiLink('${session.id}', this.checked)" ${session.settings.antiLink ? 'checked' : ''}>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <span>👁️ Auto Status View</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" onchange="toggleAutoStatus('${session.id}', this.checked)" ${session.settings.autoStatus ? 'checked' : ''}>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <span>📸 Save View Once</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" onchange="toggleViewOnce('${session.id}', this.checked)" ${session.settings.saveViewOnce ? 'checked' : ''}>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <span>📊 Deleted Captured: ${deletedCount}</span>
+                        <button onclick="viewDeleted('${session.id}')">View</button>
+                    </div>
+                    <div style="margin-top:15px;">
+                        <strong>🤖 Auto Reply Rules</strong>
+                        <div id="rules-${session.id}">
+                            ${(session.settings.autoReply || []).map(rule => `
+                                <div class="rule-item">
+                                    <span>🔑 ${rule.keyword} → 💬 ${rule.reply}</span>
+                                    <button onclick="deleteRule('${session.id}', ${rule.id})" style="background:#ff4444; padding:2px 8px;">×</button>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <div class="add-rule">
+                            <input type="text" id="keyword-${session.id}" placeholder="Keyword">
+                            <input type="text" id="reply-${session.id}" placeholder="Auto Reply">
+                            <button onclick="addRule('${session.id}')">Add</button>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            }
+        }
+        
+        async function pairNumber() {
+            const number = document.getElementById('phoneNumber').value;
+            if (!number) {
+                alert('Enter phone number');
+                return;
+            }
+            
+            const res = await fetch(`${API}/api/pair`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ number })
+            });
+            const data = await res.json();
+            
+            if (data.success) {
+                document.getElementById('pairResult').innerHTML = `<p style="color:#00ff87;">✅ Success! Pairing Code: <strong>${data.code}</strong><br>Open WhatsApp → Linked Devices → Link with code → Enter this code</p>`;
+                setTimeout(() => { closeModal(); loadSessions(); }, 3000);
+            } else {
+                document.getElementById('pairResult').innerHTML = `<p style="color:#ff4444;">❌ Failed: ${data.error}</p>`;
+            }
+        }
+        
+        async function deleteSession(id) {
+            if (confirm('Delete this session?')) {
+                await fetch(`${API}/api/session/${id}`, { method: 'DELETE' });
+                loadSessions();
+            }
+        }
+        
+        async function addRule(sessionId) {
+            const keyword = document.getElementById(`keyword-${sessionId}`).value;
+            const reply = document.getElementById(`reply-${sessionId}`).value;
+            if (!keyword || !reply) return;
+            
+            await fetch(`${API}/api/autoreply/${sessionId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ keyword, reply })
+            });
+            document.getElementById(`keyword-${sessionId}`).value = '';
+            document.getElementById(`reply-${sessionId}`).value = '';
+            loadSessions();
+        }
+        
+        async function deleteRule(sessionId, ruleId) {
+            await fetch(`${API}/api/autoreply/${sessionId}/${ruleId}`, { method: 'DELETE' });
+            loadSessions();
+        }
+        
+        async function toggleAntiDelete(sessionId, enabled) {
+            await fetch(`${API}/api/antidelete/${sessionId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ enabled })
+            });
+        }
+        
+        async function toggleAntiLink(sessionId, enabled) {
+            await fetch(`${API}/api/antilink/${sessionId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ enabled })
+            });
+        }
+        
+        async function toggleAutoStatus(sessionId, enabled) {
+            await fetch(`${API}/api/autostatus/${sessionId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ enabled })
+            });
+        }
+        
+        async function toggleViewOnce(sessionId, enabled) {
+            await fetch(`${API}/api/viewonce/${sessionId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ enabled })
+            });
+        }
+        
+        async function viewDeleted(sessionId) {
+            const res = await fetch(`${API}/api/antidelete/logs/${sessionId}`);
+            const data = await res.json();
+            if (data.logs.length === 0) {
+                alert('No deleted messages captured yet');
+            } else {
+                alert('Deleted Messages:\n' + data.logs.map(l => `📩 ${l.message || 'Media'}`).join('\n'));
+            }
+        }
+        
+        function showPairModal() {
+            document.getElementById('pairModal').style.display = 'flex';
+            document.getElementById('phoneNumber').value = '';
+            document.getElementById('pairResult').innerHTML = '';
+        }
+        
+        function closeModal() {
+            document.getElementById('pairModal').style.display = 'none';
+        }
+        
+        // Auto refresh every 5 seconds
+        setInterval(loadSessions, 5000);
+    </script>
+</body>
+</html>
