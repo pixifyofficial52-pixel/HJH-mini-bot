@@ -1,47 +1,115 @@
-const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, Browsers, downloadContentFromMessage } = require('@whiskeysockets/baileys');
+const express = require('express');
+const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, Browsers } = require('@whiskeysockets/baileys');
 const Pino = require('pino');
 const fs = require('fs-extra');
 const path = require('path');
-const axios = require('axios');
 const qrcode = require('qrcode-terminal');
-const config = require('./config');
-const helper = require('./helper');
+
+// Express app for Railway health check
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.get('/', (req, res) => {
+    res.json({
+        status: 'active',
+        bot: 'HJ-HACKER WhatsApp Bot',
+        version: '3.0.0',
+        connected: global.isConnected || false,
+        number: global.currentNumber || 'Not connected',
+        uptime: process.uptime()
+    });
+});
+
+app.get('/health', (req, res) => {
+    res.json({ status: 'ok', connected: global.isConnected || false });
+});
+
+app.listen(PORT, () => {
+    console.log(`✅ Web server running on port ${PORT}`);
+});
+
+// ============ BOT CONFIGURATION ============
+const BOT_NAME = 'HJ-HACKER';
+const BOT_VERSION = '3.0.0';
+const PREFIX = '.';
+const SESSIONS_DIR = path.join(__dirname, 'sessions');
 
 // Global variables
-let sock = null;
-let isConnected = false;
-let currentNumber = null;
+global.isConnected = false;
+global.currentNumber = null;
+global.pairingCode = null;
 
-// Load settings
-let settings = config.loadSettings();
+// Settings
+let settings = {
+    autoReplyRules: [],
+    antiDelete: false,
+    antiLink: false,
+    autoStatusView: false,
+    autoStatusReact: false,
+    autoStatusReactEmoji: '👍',
+    saveViewOnce: false
+};
 
-// Set global variables
-global.botName = config.BOT_NAME;
-global.botVersion = config.BOT_VERSION;
-global.autoReplyRules = settings.autoReplyRules || [];
-global.antiDelete = settings.antiDelete || false;
-global.antiLink = settings.antiLink || false;
-global.autoStatusView = settings.autoStatusView || false;
-global.autoStatusReact = settings.autoStatusReact || false;
-global.autoStatusReactEmoji = settings.autoStatusReactEmoji || '👍';
-global.saveViewOnce = settings.saveViewOnce || false;
-global.antiLinkWhitelist = config.ANTI_LINK_WHITELIST;
-global.deletedMessages = new Map();
-global.viewOnceMedia = new Map();
-global.statusSeen = new Set();
+const SETTINGS_FILE = path.join(__dirname, 'settings.json');
+if (fs.existsSync(SETTINGS_FILE)) {
+    settings = fs.readJsonSync(SETTINGS_FILE);
+}
 
-// Save settings function
 function saveSettings() {
-    const settingsToSave = {
-        autoReplyRules: global.autoReplyRules,
-        antiDelete: global.antiDelete,
-        antiLink: global.antiLink,
-        autoStatusView: global.autoStatusView,
-        autoStatusReact: global.autoStatusReact,
-        autoStatusReactEmoji: global.autoStatusReactEmoji,
-        saveViewOnce: global.saveViewOnce
-    };
-    config.saveSettings(settingsToSave);
+    fs.writeJsonSync(SETTINGS_FILE, settings, { spaces: 2 });
+}
+
+// Helper functions
+function formatNumber(number) {
+    return number.replace('@s.whatsapp.net', '').replace('@c.us', '');
+}
+
+function containsLink(text) {
+    if (!text) return false;
+    const urlRegex = /(https?:\/\/[^\s]+)/gi;
+    return urlRegex.test(text);
+}
+
+function isWhitelisted(text) {
+    const whitelist = ['whatsapp.com', 'youtube.com', 'instagram.com', 'facebook.com'];
+    for (const domain of whitelist) {
+        if (text.toLowerCase().includes(domain)) return true;
+    }
+    return false;
+}
+
+function getMenu() {
+    return `╔════════════════════════════════════════╗
+║     🤖 *${BOT_NAME} BOT MENU*           ║
+╠════════════════════════════════════════╣
+║ 📌 *General Commands*                  ║
+║  .menu / .help - Show this menu        ║
+║  .ping - Check bot status              ║
+║  .info - Bot information               ║
+║                                        ║
+║ 🤖 *Auto Reply*                        ║
+║  .addreply keyword|reply               ║
+║  .listreply - Show all rules           ║
+║  .delreply id - Delete rule            ║
+║                                        ║
+║ 🛡️ *Anti Delete*                       ║
+║  .antidelete on/off                    ║
+║  .deleted - Show deleted msgs          ║
+║                                        ║
+║ 🔗 *Anti Link*                         ║
+║  .antilink on/off                      ║
+║                                        ║
+║ 👁️ *Auto Status*                       ║
+║  .autostatus on/off                    ║
+║  .statusreact on/off                   ║
+║                                        ║
+║ 📸 *Media Tools*                       ║
+║  .dp @number - Get profile pic         ║
+║  .saveviewonce on/off                  ║
+║                                        ║
+║ 🌐 *Online Status*                     ║
+║  .online on/off - Toggle online        ║
+╚════════════════════════════════════════╝`;
 }
 
 // ============ COMMAND HANDLER ============
@@ -50,291 +118,210 @@ async function handleCommand(message, from, sock) {
     const args = command.split(' ');
     const mainCmd = args[0];
     
-    // Menu command
+    // Menu
     if (mainCmd === 'menu' || mainCmd === 'help') {
-        await sock.sendMessage(from, { text: helper.getMenu() });
+        await sock.sendMessage(from, { text: getMenu() });
         return true;
     }
     
-    // Ping command
+    // Ping
     if (mainCmd === 'ping') {
-        await sock.sendMessage(from, { text: '🏓 *Pong!*\nBot is active and running.' });
+        await sock.sendMessage(from, { text: '🏓 *Pong!*\nBot is active.' });
         return true;
     }
     
-    // Info command
+    // Info
     if (mainCmd === 'info') {
-        await sock.sendMessage(from, { text: helper.getInfo(sock, isConnected) });
+        const info = `📱 *Bot Info*
+━━━━━━━━━━━━━━━━
+🤖 *Name:* ${BOT_NAME}
+📌 *Version:* ${BOT_VERSION}
+🟢 *Status:* Connected
+👑 *Developer:* HJ-HACKER
+━━━━━━━━━━━━━━━━
+🔧 *Features:*
+${settings.antiDelete ? '✅ Anti Delete' : '❌ Anti Delete'}
+${settings.antiLink ? '✅ Anti Link' : '❌ Anti Link'}
+${settings.autoStatusView ? '✅ Auto Status' : '❌ Auto Status'}
+📝 Auto Replies: ${settings.autoReplyRules.length}`;
+        await sock.sendMessage(from, { text: info });
         return true;
     }
     
-    // ============ AUTO REPLY COMMANDS ============
+    // Add Auto Reply
     if (mainCmd === 'addreply') {
         const parts = message.slice(1).split('|');
         if (parts.length < 2) {
-            await sock.sendMessage(from, { text: '❌ *Usage:* .addreply keyword|reply' });
+            await sock.sendMessage(from, { text: '❌ Usage: .addreply keyword|reply' });
             return true;
         }
         
         const keyword = parts[0].replace('addreply', '').trim();
         const reply = parts[1].trim();
         
-        const rule = {
+        settings.autoReplyRules.push({
             id: Date.now(),
             keyword: keyword.toLowerCase(),
             reply: reply,
             enabled: true
-        };
-        
-        global.autoReplyRules.push(rule);
+        });
         saveSettings();
         
-        await sock.sendMessage(from, { text: `✅ *Auto Reply Added!*\n\n🔑 Keyword: *${keyword}*\n💬 Reply: *${reply}*` });
+        await sock.sendMessage(from, { text: `✅ Auto Reply Added!\n🔑 ${keyword} → 💬 ${reply}` });
         return true;
     }
     
+    // List Auto Replies
     if (mainCmd === 'listreply') {
-        if (global.autoReplyRules.length === 0) {
-            await sock.sendMessage(from, { text: '📭 *No auto reply rules found.*\nUse .addreply keyword|reply to add.' });
+        if (settings.autoReplyRules.length === 0) {
+            await sock.sendMessage(from, { text: '📭 No auto reply rules.' });
             return true;
         }
         
-        let ruleList = '📋 *Auto Reply Rules*\n━━━━━━━━━━━━━━\n';
-        global.autoReplyRules.forEach((rule, index) => {
-            ruleList += `\n${index + 1}. 🔑 *${rule.keyword}*\n   💬 → ${rule.reply}\n   🆔 ID: ${rule.id}\n`;
+        let list = '📋 *Auto Reply Rules*\n━━━━━━━━━━━━━━\n';
+        settings.autoReplyRules.forEach((rule, i) => {
+            list += `\n${i+1}. 🔑 *${rule.keyword}*\n   💬 → ${rule.reply}`;
         });
-        await sock.sendMessage(from, { text: ruleList });
+        await sock.sendMessage(from, { text: list });
         return true;
     }
     
+    // Delete Auto Reply
     if (mainCmd === 'delreply') {
         const ruleId = parseInt(args[1]);
         if (!ruleId) {
-            await sock.sendMessage(from, { text: '❌ *Usage:* .delreply rule_id' });
+            await sock.sendMessage(from, { text: '❌ Usage: .delreply id' });
             return true;
         }
         
-        const index = global.autoReplyRules.findIndex(r => r.id === ruleId);
+        const index = settings.autoReplyRules.findIndex(r => r.id === ruleId);
         if (index !== -1) {
-            const removed = global.autoReplyRules.splice(index, 1);
+            const removed = settings.autoReplyRules.splice(index, 1);
             saveSettings();
-            await sock.sendMessage(from, { text: `✅ *Rule deleted:* ${removed[0].keyword}` });
+            await sock.sendMessage(from, { text: `✅ Deleted: ${removed[0].keyword}` });
         } else {
-            await sock.sendMessage(from, { text: '❌ Rule not found. Use .listreply to see IDs.' });
+            await sock.sendMessage(from, { text: '❌ Rule not found' });
         }
         return true;
     }
     
-    // ============ ANTI DELETE ============
+    // Anti Delete
     if (mainCmd === 'antidelete') {
         const action = args[1];
         if (action === 'on') {
-            global.antiDelete = true;
+            settings.antiDelete = true;
             saveSettings();
-            await sock.sendMessage(from, { text: '✅ *Anti Delete Activated!*\nDeleted messages will be captured.' });
+            await sock.sendMessage(from, { text: '✅ Anti Delete Activated!' });
         } else if (action === 'off') {
-            global.antiDelete = false;
+            settings.antiDelete = false;
             saveSettings();
-            await sock.sendMessage(from, { text: '❌ *Anti Delete Deactivated*' });
+            await sock.sendMessage(from, { text: '❌ Anti Delete Deactivated' });
         } else {
-            await sock.sendMessage(from, { text: `🛡️ *Anti Delete Status:* ${global.antiDelete ? 'ON' : 'OFF'}\nUse .antidelete on/off to change.` });
+            await sock.sendMessage(from, { text: `🛡️ Anti Delete: ${settings.antiDelete ? 'ON' : 'OFF'}` });
         }
         return true;
     }
     
-    if (mainCmd === 'deleted') {
-        const sessionDeleted = global.deletedMessages.get(from) || [];
-        if (sessionDeleted.length === 0) {
-            await sock.sendMessage(from, { text: '📭 *No deleted messages captured yet.*' });
-            return true;
-        }
-        
-        let msg = '🗑️ *Last 10 Deleted Messages*\n━━━━━━━━━━━━━━\n';
-        sessionDeleted.slice(0, 10).forEach((log, i) => {
-            msg += `\n${i+1}. 📩 *From:* ${log.from}\n   💬 *Message:* ${log.message}\n   🕐 *Time:* ${new Date(log.capturedAt).toLocaleTimeString()}\n`;
-        });
-        await sock.sendMessage(from, { text: msg });
-        return true;
-    }
-    
-    // ============ ANTI LINK ============
+    // Anti Link
     if (mainCmd === 'antilink') {
         const action = args[1];
         if (action === 'on') {
-            global.antiLink = true;
+            settings.antiLink = true;
             saveSettings();
-            await sock.sendMessage(from, { text: '✅ *Anti Link Activated!*\nLinks will be blocked automatically.' });
+            await sock.sendMessage(from, { text: '✅ Anti Link Activated!' });
         } else if (action === 'off') {
-            global.antiLink = false;
+            settings.antiLink = false;
             saveSettings();
-            await sock.sendMessage(from, { text: '❌ *Anti Link Deactivated*' });
+            await sock.sendMessage(from, { text: '❌ Anti Link Deactivated' });
         } else {
-            await sock.sendMessage(from, { text: `🔗 *Anti Link Status:* ${global.antiLink ? 'ON' : 'OFF'}\nUse .antilink on/off to change.` });
+            await sock.sendMessage(from, { text: `🔗 Anti Link: ${settings.antiLink ? 'ON' : 'OFF'}` });
         }
         return true;
     }
     
-    if (mainCmd === 'whitelist') {
-        const action = args[1];
-        const domain = args[2];
-        
-        if (!action || !domain) {
-            await sock.sendMessage(from, { text: '❌ *Usage:* .whitelist add/remove domain.com' });
-            return true;
-        }
-        
-        if (action === 'add') {
-            if (!global.antiLinkWhitelist.includes(domain)) {
-                global.antiLinkWhitelist.push(domain);
-                await sock.sendMessage(from, { text: `✅ Added *${domain}* to whitelist` });
-            } else {
-                await sock.sendMessage(from, { text: `⚠️ *${domain}* already in whitelist` });
-            }
-        } else if (action === 'remove') {
-            const index = global.antiLinkWhitelist.indexOf(domain);
-            if (index !== -1) {
-                global.antiLinkWhitelist.splice(index, 1);
-                await sock.sendMessage(from, { text: `✅ Removed *${domain}* from whitelist` });
-            } else {
-                await sock.sendMessage(from, { text: `❌ *${domain}* not found in whitelist` });
-            }
-        }
-        return true;
-    }
-    
-    // ============ AUTO STATUS ============
+    // Auto Status
     if (mainCmd === 'autostatus') {
         const action = args[1];
         if (action === 'on') {
-            global.autoStatusView = true;
+            settings.autoStatusView = true;
             saveSettings();
-            await sock.sendMessage(from, { text: '✅ *Auto Status View Activated!*\nI will view all statuses automatically.' });
+            await sock.sendMessage(from, { text: '✅ Auto Status View Activated!' });
         } else if (action === 'off') {
-            global.autoStatusView = false;
+            settings.autoStatusView = false;
             saveSettings();
-            await sock.sendMessage(from, { text: '❌ *Auto Status View Deactivated*' });
+            await sock.sendMessage(from, { text: '❌ Auto Status View Deactivated' });
         } else {
-            await sock.sendMessage(from, { text: `👁️ *Auto Status View:* ${global.autoStatusView ? 'ON' : 'OFF'}\nUse .autostatus on/off to change.` });
+            await sock.sendMessage(from, { text: `👁️ Auto Status: ${settings.autoStatusView ? 'ON' : 'OFF'}` });
         }
         return true;
     }
     
-    if (mainCmd === 'statusreact') {
-        const action = args[1];
-        if (action === 'on') {
-            global.autoStatusReact = true;
-            saveSettings();
-            await sock.sendMessage(from, { text: `✅ *Auto Status React Activated!*\nReaction: ${global.autoStatusReactEmoji}` });
-        } else if (action === 'off') {
-            global.autoStatusReact = false;
-            saveSettings();
-            await sock.sendMessage(from, { text: '❌ *Auto Status React Deactivated*' });
-        } else {
-            await sock.sendMessage(from, { text: `👍 *Auto Status React:* ${global.autoStatusReact ? 'ON' : 'OFF'}\nUse .statusreact on/off to change.` });
-        }
-        return true;
-    }
-    
-    // ============ GET DP ============
+    // Get DP
     if (mainCmd === 'dp') {
         let targetNumber = args[1];
         if (!targetNumber) {
-            await sock.sendMessage(from, { text: '❌ *Usage:* .dp @number\nExample: .dp 923001234567' });
+            await sock.sendMessage(from, { text: '❌ Usage: .dp @number\nExample: .dp 923001234567' });
             return true;
         }
         
         targetNumber = targetNumber.replace('@', '');
-        
-        await sock.sendMessage(from, { text: `📸 *Fetching profile picture...*\nNumber: ${targetNumber}` });
+        await sock.sendMessage(from, { text: `📸 Fetching DP for ${targetNumber}...` });
         
         try {
-            const jid = targetNumber.includes('@') ? targetNumber : `${targetNumber}@s.whatsapp.net`;
+            const jid = `${targetNumber}@s.whatsapp.net`;
             const ppUrl = await sock.profilePictureUrl(jid, 'image');
             await sock.sendMessage(from, { 
                 image: { url: ppUrl },
-                caption: `📸 *Profile Picture*\n\n*Number:* ${targetNumber}`
+                caption: `📸 *Profile Picture*\n📱 ${targetNumber}`
             });
         } catch (error) {
-            await sock.sendMessage(from, { text: `❌ *DP not found*\nUser may have no profile picture or privacy settings.` });
+            await sock.sendMessage(from, { text: '❌ DP not found or private' });
         }
         return true;
     }
     
-    // ============ VIEW ONCE SAVER ============
-    if (mainCmd === 'saveviewonce') {
-        const action = args[1];
-        if (action === 'on') {
-            global.saveViewOnce = true;
-            saveSettings();
-            await sock.sendMessage(from, { text: '✅ *View Once Saver Activated!*\nView once media will be saved automatically.' });
-        } else if (action === 'off') {
-            global.saveViewOnce = false;
-            saveSettings();
-            await sock.sendMessage(from, { text: '❌ *View Once Saver Deactivated*' });
-        } else {
-            await sock.sendMessage(from, { text: `📸 *View Once Saver:* ${global.saveViewOnce ? 'ON' : 'OFF'}\nUse .saveviewonce on/off to change.` });
-        }
-        return true;
-    }
-    
-    // ============ ONLINE STATUS ============
+    // Online/Offline
     if (mainCmd === 'online') {
         const action = args[1];
         if (action === 'on') {
             await sock.sendPresenceUpdate('available');
-            await sock.sendMessage(from, { text: '✅ *Online Mode Activated!*\nYou appear online now.' });
+            await sock.sendMessage(from, { text: '✅ Online Mode Activated!' });
         } else if (action === 'off') {
             await sock.sendPresenceUpdate('unavailable');
-            await sock.sendMessage(from, { text: '❌ *Offline Mode Activated!*\nYou appear offline now.' });
+            await sock.sendMessage(from, { text: '❌ Offline Mode Activated!' });
         } else {
-            await sock.sendMessage(from, { text: '🌐 *Online Status*\nUse .online on/off to change your presence.' });
+            await sock.sendMessage(from, { text: '🌐 Usage: .online on/off' });
         }
         return true;
     }
     
-    // ============ SEND MESSAGE ============
-    if (mainCmd === 'send') {
-        const parts = message.slice(1).split('|');
-        if (parts.length < 2) {
-            await sock.sendMessage(from, { text: '❌ *Usage:* .send number|message' });
-            return true;
+    // Save View Once
+    if (mainCmd === 'saveviewonce') {
+        const action = args[1];
+        if (action === 'on') {
+            settings.saveViewOnce = true;
+            saveSettings();
+            await sock.sendMessage(from, { text: '✅ View Once Saver Activated!' });
+        } else if (action === 'off') {
+            settings.saveViewOnce = false;
+            saveSettings();
+            await sock.sendMessage(from, { text: '❌ View Once Saver Deactivated' });
+        } else {
+            await sock.sendMessage(from, { text: `📸 View Once Saver: ${settings.saveViewOnce ? 'ON' : 'OFF'}` });
         }
-        
-        const targetNumber = parts[0].replace('send', '').trim();
-        const messageToSend = parts[1].trim();
-        const targetJid = targetNumber.includes('@') ? targetNumber : `${targetNumber}@s.whatsapp.net`;
-        
-        try {
-            await sock.sendMessage(targetJid, { text: messageToSend });
-            await sock.sendMessage(from, { text: `📤 *Message Sent!*\nTo: ${targetNumber}\nMessage: ${messageToSend}` });
-        } catch (error) {
-            await sock.sendMessage(from, { text: `❌ *Failed to send message*\n${error.message}` });
-        }
-        return true;
-    }
-    
-    // ============ BROADCAST ============
-    if (mainCmd === 'broadcast') {
-        const broadcastMsg = message.slice(1).replace('broadcast', '').trim();
-        if (!broadcastMsg) {
-            await sock.sendMessage(from, { text: '❌ *Usage:* .broadcast message' });
-            return true;
-        }
-        
-        await sock.sendMessage(from, { text: `📢 *Broadcast Started!*\nMessage: ${broadcastMsg}\n\n*Note:* This will send to all active chats.` });
         return true;
     }
     
     // Unknown command
-    await sock.sendMessage(from, { text: `❌ *Unknown Command:* ${mainCmd}\n\nType *.menu* to see all available commands.` });
+    await sock.sendMessage(from, { text: `❌ Unknown command: ${mainCmd}\nType .menu for help` });
     return true;
 }
 
-// ============ AUTO REPLY CHECK ============
+// Auto Reply Check
 async function checkAutoReply(message, from, sock) {
     const lowerMsg = message.toLowerCase();
-    for (const rule of global.autoReplyRules) {
-        if (rule.enabled && lowerMsg.includes(rule.keyword.toLowerCase())) {
+    for (const rule of settings.autoReplyRules) {
+        if (rule.enabled && lowerMsg.includes(rule.keyword)) {
             await sock.sendMessage(from, { text: rule.reply });
             return true;
         }
@@ -342,253 +329,133 @@ async function checkAutoReply(message, from, sock) {
     return false;
 }
 
-// ============ CAPTURE DELETED MESSAGE ============
-function captureDeletedMessage(message, from, to) {
-    if (!global.antiDelete) return;
-    
-    const key = to || from;
-    const sessionDeleted = global.deletedMessages.get(key) || [];
-    sessionDeleted.unshift({
-        from: helper.formatNumber(from),
-        message: message,
-        capturedAt: new Date().toISOString()
-    });
-    
-    if (sessionDeleted.length > 50) sessionDeleted.pop();
-    global.deletedMessages.set(key, sessionDeleted);
-    
-    console.log(`🗑️ Deleted message captured from ${from}: ${message}`);
-}
-
-// ============ DOWNLOAD VIEW ONCE MEDIA ============
-async function downloadViewOnceMedia(message, from, sock) {
-    if (!global.saveViewOnce) return;
-    
-    if (message.message?.viewOnceMessageV2) {
-        const viewOnceMsg = message.message.viewOnceMessageV2.message;
-        let mediaUrl, caption;
-        
-        if (viewOnceMsg?.imageMessage) {
-            const stream = await downloadContentFromMessage(viewOnceMsg.imageMessage, 'image');
-            let buffer = Buffer.from([]);
-            for await (const chunk of stream) {
-                buffer = Buffer.concat([buffer, chunk]);
-            }
-            
-            await sock.sendMessage(from, {
-                image: buffer,
-                caption: `📸 *View Once Image Saved*\n📅 ${new Date().toLocaleString()}\n👑 Saved by HJ-HACKER Bot`
-            });
-            console.log(`📸 View once image saved from ${from}`);
-        } else if (viewOnceMsg?.videoMessage) {
-            const stream = await downloadContentFromMessage(viewOnceMsg.videoMessage, 'video');
-            let buffer = Buffer.from([]);
-            for await (const chunk of stream) {
-                buffer = Buffer.concat([buffer, chunk]);
-            }
-            
-            await sock.sendMessage(from, {
-                video: buffer,
-                caption: `🎥 *View Once Video Saved*\n📅 ${new Date().toLocaleString()}\n👑 Saved by HJ-HACKER Bot`
-            });
-            console.log(`🎥 View once video saved from ${from}`);
-        }
+// Anti Link Check
+async function checkAntiLink(message, from, sock) {
+    if (settings.antiLink && containsLink(message) && !isWhitelisted(message)) {
+        await sock.sendMessage(from, { text: '🔗 *Link Detected!*\nLinks are not allowed here.' });
+        return true;
     }
+    return false;
 }
 
-// ============ AUTO VIEW STATUS ============
-async function autoViewStatus(status, sock) {
-    if (!global.autoStatusView) return;
-    
-    const statusId = status.key.id;
-    if (!global.statusSeen.has(statusId)) {
-        global.statusSeen.add(statusId);
+// ============ CONNECT TO WHATSAPP (WITH PAIRING CODE) ============
+async function connectToWhatsApp(usePairingCode = false, phoneNumber = null) {
+    try {
+        const { state, saveCreds } = await useMultiFileAuthState(SESSIONS_DIR);
+        const { version } = await fetchLatestBaileysVersion();
         
-        await sock.readMessages([status.key]);
-        console.log(`👁️ Auto viewed status from ${status.key.remoteJid}`);
+        const sock = makeWASocket({
+            version,
+            auth: state,
+            printQRInTerminal: !usePairingCode,
+            browser: Browsers.macOS('Desktop'),
+            logger: Pino({ level: 'silent' }),
+            markOnlineOnConnect: true
+        });
         
-        if (global.autoStatusReact) {
-            await sock.sendMessage(status.key.remoteJid, {
-                react: { text: global.autoStatusReactEmoji, key: status.key }
-            });
-            console.log(`👍 Auto reacted with ${global.autoStatusReactEmoji}`);
-        }
-    }
-}
-
-// ============ CONNECT TO WHATSAPP ============
-async function connectToWhatsApp() {
-    const { state, saveCreds } = await useMultiFileAuthState(config.SESSIONS_DIR);
-    const { version } = await fetchLatestBaileysVersion();
-    
-    sock = makeWASocket({
-        version,
-        auth: state,
-        printQRInTerminal: false,
-        browser: Browsers.macOS('Desktop'),
-        logger: Pino({ level: 'silent' }),
-        syncFullHistory: false,
-        markOnlineOnConnect: true
-    });
-    
-    // Handle QR code
-    sock.ev.on('connection.update', async (update) => {
-        const { connection, lastDisconnect, qr } = update;
-        
-        if (qr) {
-            console.log('\n📱 SCAN THIS QR CODE WITH WHATSAPP:\n');
-            qrcode.generate(qr, { small: true });
-            console.log('\n⚡ Or use pairing code method:');
-            console.log('📌 Send .paircode command in terminal after starting\n');
-        }
-        
-        if (connection === 'open') {
-            isConnected = true;
-            const user = sock.user;
-            currentNumber = user.id.split(':')[0];
-            console.log('\n✅ Bot Connected Successfully!');
-            console.log(`📱 Connected Number: ${currentNumber}`);
-            console.log(`🤖 Bot Name: ${global.botName}`);
-            console.log('\n📝 Commands: Type .menu in WhatsApp\n');
-        }
-        
-        if (connection === 'close') {
-            isConnected = false;
-            const statusCode = lastDisconnect?.error?.output?.statusCode;
-            const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
-            
-            console.log(`\n❌ Connection closed: ${statusCode}`);
-            if (shouldReconnect) {
-                console.log('🔄 Reconnecting in 5 seconds...\n');
-                setTimeout(connectToWhatsApp, 5000);
-            } else {
-                console.log('🔒 Logged out. Please delete sessions folder and restart.\n');
-            }
-        }
-    });
-    
-    // Save credentials
-    sock.ev.on('creds.update', saveCreds);
-    
-    // Handle incoming messages
-    sock.ev.on('messages.upsert', async ({ messages }) => {
-        const msg = messages[0];
-        if (!msg.message || msg.key.fromMe) return;
-        
-        const from = msg.key.remoteJid;
-        const messageText = msg.message.conversation || 
-                           msg.message.extendedTextMessage?.text || 
-                           msg.message.imageMessage?.caption ||
-                           '';
-        
-        if (!messageText) return;
-        
-        console.log(`📩 [${helper.formatNumber(from)}]: ${messageText}`);
-        
-        // Check if it's a command
-        if (messageText.startsWith(config.PREFIX)) {
-            await handleCommand(messageText, from, sock);
-        } else {
-            // Check auto reply
-            await checkAutoReply(messageText, from, sock);
-            
-            // Anti link check
-            if (global.antiLink && helper.containsLink(messageText)) {
-                const isWhitelisted = helper.isWhitelisted(messageText, global.antiLinkWhitelist);
-                if (!isWhitelisted) {
-                    await sock.sendMessage(from, { 
-                        text: '🔗 *Link Detected!*\n\nLinks are not allowed in this chat. Please avoid sending links.' 
-                    });
+        // Handle pairing code if requested
+        if (usePairingCode && phoneNumber) {
+            console.log(`\n🔑 Requesting pairing code for ${phoneNumber}...\n`);
+            setTimeout(async () => {
+                try {
+                    const code = await sock.requestPairingCode(phoneNumber);
+                    global.pairingCode = code;
+                    console.log(`
+╔═══════════════════════════════════════════╗
+║     🔑 YOUR PAIRING CODE                  ║
+║                                          ║
+║        ${code}                             ║
+║                                          ║
+║  Open WhatsApp → Settings →               ║
+║  Linked Devices → Link with code         ║
+║  Enter this code                         ║
+╚═══════════════════════════════════════════╝
+`);
+                } catch (error) {
+                    console.log('❌ Failed to get pairing code:', error.message);
                 }
-            }
+            }, 3000);
         }
         
-        // Download view once media
-        await downloadViewOnceMedia(msg, from, sock);
-    });
-    
-    // Handle deleted messages
-    sock.ev.on('messages.update', async (updates) => {
-        for (const update of updates) {
-            if (update.update?.message) {
-                const message = update.update.message;
-                const key = update.key;
-                const messageText = message.conversation || message.extendedTextMessage?.text || '';
+        sock.ev.on('connection.update', async (update) => {
+            const { connection, lastDisconnect, qr } = update;
+            
+            if (qr && !usePairingCode) {
+                console.log('\n📱 QR CODE GENERATED!');
+                console.log('Scan with WhatsApp → Linked Devices\n');
+                qrcode.generate(qr, { small: true });
+            }
+            
+            if (connection === 'open') {
+                global.isConnected = true;
+                global.currentNumber = sock.user.id.split(':')[0];
+                console.log('\n✅ =====================================');
+                console.log(`✅ ${BOT_NAME} CONNECTED!`);
+                console.log(`✅ Number: ${global.currentNumber}`);
+                console.log('✅ =====================================\n');
+                console.log('📝 Bot is ready! Type .menu in WhatsApp\n');
+            }
+            
+            if (connection === 'close') {
+                global.isConnected = false;
+                const statusCode = lastDisconnect?.error?.output?.statusCode;
+                console.log(`\n❌ Disconnected: ${statusCode}`);
                 
-                if (messageText) {
-                    captureDeletedMessage(messageText, key.remoteJid, key.fromMe ? key.remoteJid : null);
+                if (statusCode !== DisconnectReason.loggedOut) {
+                    console.log('🔄 Reconnecting in 10 seconds...\n');
+                    setTimeout(() => connectToWhatsApp(false), 10000);
+                } else {
+                    console.log('🔒 Logged out. Delete sessions folder and restart.\n');
                 }
             }
-        }
-    });
-    
-    // Handle status updates
-    sock.ev.on('status.update', async (status) => {
-        await autoViewStatus(status, sock);
-    });
-}
-
-// ============ PAIRING CODE METHOD ============
-async function pairWithCode(number) {
-    const { state, saveCreds } = await useMultiFileAuthState(config.SESSIONS_DIR);
-    const { version } = await fetchLatestBaileysVersion();
-    
-    sock = makeWASocket({
-        version,
-        auth: state,
-        printQRInTerminal: false,
-        browser: Browsers.macOS('Desktop'),
-        logger: Pino({ level: 'silent' })
-    });
-    
-    sock.ev.on('connection.update', async (update) => {
-        const { connection, lastDisconnect, qr } = update;
+        });
         
-        if (qr) {
-            console.log('\n📱 QR Code Generated - Also scan this if pairing fails:\n');
-            qrcode.generate(qr, { small: true });
-        }
+        sock.ev.on('creds.update', saveCreds);
         
-        if (connection === 'open') {
-            isConnected = true;
-            console.log('\n✅ Bot Connected Successfully!');
-            console.log(`📱 Connected Number: ${sock.user.id.split(':')[0]}\n`);
-        }
-        
-        if (connection === 'close') {
-            isConnected = false;
-            const statusCode = lastDisconnect?.error?.output?.statusCode;
-            if (statusCode !== DisconnectReason.loggedOut) {
-                setTimeout(() => connectToWhatsApp(), 5000);
+        sock.ev.on('messages.upsert', async ({ messages }) => {
+            const msg = messages[0];
+            if (!msg.message || msg.key.fromMe) return;
+            
+            const from = msg.key.remoteJid;
+            const messageText = msg.message.conversation || 
+                               msg.message.extendedTextMessage?.text || '';
+            
+            if (!messageText) return;
+            
+            console.log(`📩 [${formatNumber(from)}]: ${messageText}`);
+            
+            if (messageText.startsWith(PREFIX)) {
+                await handleCommand(messageText, from, sock);
+            } else {
+                await checkAutoReply(messageText, from, sock);
+                await checkAntiLink(messageText, from, sock);
             }
-        }
-    });
-    
-    sock.ev.on('creds.update', saveCreds);
-    
-    // Request pairing code
-    if (number) {
-        const code = await sock.requestPairingCode(number);
-        console.log(`\n🔑 Your Pairing Code: ${code}`);
-        console.log(`📌 Open WhatsApp → Settings → Linked Devices → Link with code`);
-        console.log(`📌 Enter this code: ${code}\n`);
+        });
+        
+        return sock;
+        
+    } catch (error) {
+        console.error('Connection error:', error);
+        setTimeout(() => connectToWhatsApp(false), 10000);
     }
 }
 
-// ============ START BOT ============
+// ============ START BOT WITH CHOICE ============
 async function start() {
     console.log(`
 ╔═══════════════════════════════════════════╗
-║     🤖 ${global.botName} WHATSAPP BOT         ║
-║     Version: ${global.botVersion}                      ║
+║     🤖 ${BOT_NAME} WHATSAPP BOT              ║
+║     Version: ${BOT_VERSION}                      ║
 ║     Developer: HJ-HACKER                   ║
 ╚═══════════════════════════════════════════╝
     `);
     
     console.log('Choose connection method:');
-    console.log('1. QR Code Scan (Recommended)');
-    console.log('2. Pairing Code (8-digit code)');
-    console.log('3. Use existing session\n');
+    console.log('┌─────────────────────────────────────┐');
+    console.log('│ 1. QR Code Scan                     │');
+    console.log('│ 2. Pairing Code (8-digit code)      │');
+    console.log('│ 3. Use existing session             │');
+    console.log('└─────────────────────────────────────┘');
     
     const readline = require('readline');
     const rl = readline.createInterface({
@@ -596,18 +463,21 @@ async function start() {
         output: process.stdout
     });
     
-    rl.question('Enter your choice (1/2/3): ', async (choice) => {
+    rl.question('\nEnter your choice (1/2/3): ', async (choice) => {
         if (choice === '2') {
             rl.question('Enter your WhatsApp number with country code (e.g., 923001234567): ', async (number) => {
                 rl.close();
-                await pairWithCode(number);
+                console.log('\n🔄 Generating pairing code...\n');
+                await connectToWhatsApp(true, number);
             });
         } else if (choice === '3') {
             rl.close();
-            await connectToWhatsApp();
+            console.log('\n🔄 Loading existing session...\n');
+            await connectToWhatsApp(false);
         } else {
             rl.close();
-            await connectToWhatsApp();
+            console.log('\n🔄 QR Code mode selected. Scan the QR code with WhatsApp.\n');
+            await connectToWhatsApp(false);
         }
     });
 }
@@ -615,9 +485,6 @@ async function start() {
 // Handle exit
 process.on('SIGINT', async () => {
     console.log('\n\n🛑 Bot shutting down...');
-    if (sock) {
-        await sock.logout();
-    }
     process.exit(0);
 });
 
