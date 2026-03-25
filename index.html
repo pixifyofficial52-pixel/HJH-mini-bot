@@ -2,17 +2,62 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HJ-HACKER - WhatsApp Manager</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>HJ-HACKER - WhatsApp Automation Suite</title>
+    
+    <!-- Font Awesome 6 (Free CDN) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
         body {
-            font-family: 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
             color: white;
             min-height: 100vh;
+            overflow-x: hidden;
         }
-        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+        
+        /* Animated Background */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+        
+        .bg-animation::before {
+            content: '';
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(0,255,135,0.1) 0%, transparent 70%);
+            animation: rotate 20s linear infinite;
+        }
+        
+        @keyframes rotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+        }
         
         /* Header */
         .header {
@@ -20,70 +65,234 @@
             align-items: center;
             justify-content: space-between;
             flex-wrap: wrap;
-            padding: 20px;
+            padding: 20px 30px;
             background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
             border-radius: 20px;
             margin-bottom: 30px;
-        }
-        .logo-area { display: flex; align-items: center; gap: 15px; }
-        .logo { width: 60px; height: 60px; border-radius: 15px; }
-        h1 { background: linear-gradient(135deg, #00ff87, #60efff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .channel-btn {
-            background: #25D366;
-            padding: 10px 20px;
-            border-radius: 30px;
-            text-decoration: none;
-            color: white;
-            font-weight: bold;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
         }
         
-        /* Stats */
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .logo {
+            width: 60px;
+            height: 60px;
+            border-radius: 15px;
+            object-fit: cover;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        
+        .logo-area h1 {
+            font-size: 1.8rem;
+            background: linear-gradient(135deg, #00ff87, #60efff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .logo-area p {
+            font-size: 0.8rem;
+            color: #aaa;
+        }
+        
+        .channel-btn {
+            background: linear-gradient(135deg, #25D366, #128C7E);
+            padding: 12px 25px;
+            border-radius: 50px;
+            text-decoration: none;
+            color: white;
+            font-weight: 600;
+            transition: transform 0.3s, box-shadow 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .channel-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(37,211,102,0.3);
+        }
+        
+        /* Stats Cards */
         .stats {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 20px;
             margin-bottom: 30px;
         }
+        
         .stat-card {
-            background: rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
             padding: 20px;
-            border-radius: 15px;
+            border-radius: 20px;
             text-align: center;
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: transform 0.3s;
         }
-        .stat-number { font-size: 2rem; font-weight: bold; color: #00ff87; }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255,255,255,0.1);
+        }
+        
+        .stat-card i {
+            font-size: 2rem;
+            color: #00ff87;
+            margin-bottom: 10px;
+        }
+        
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #00ff87, #60efff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            color: #ccc;
+            margin-top: 5px;
+        }
+        
+        /* Section Title */
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 30px 0 20px;
+            font-size: 1.5rem;
+        }
+        
+        .section-title i {
+            color: #00ff87;
+        }
         
         /* Sessions Grid */
         .sessions-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
             gap: 20px;
             margin-bottom: 30px;
         }
+        
         .session-card {
-            background: rgba(255,255,255,0.1);
-            border-radius: 15px;
-            padding: 20px;
+            background: rgba(255,255,255,0.05);
             backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: all 0.3s;
         }
+        
+        .session-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .add-session {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border: 2px dashed rgba(0,255,135,0.3);
+            background: rgba(0,255,135,0.05);
+        }
+        
+        .add-session:hover {
+            border-color: #00ff87;
+            background: rgba(0,255,135,0.1);
+        }
+        
+        .add-session-content {
+            text-align: center;
+        }
+        
+        .add-session-content i {
+            font-size: 3rem;
+            color: #00ff87;
+            margin-bottom: 10px;
+        }
+        
         .session-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 15px;
             padding-bottom: 10px;
-            border-bottom: 1px solid rgba(255,255,255,0.2);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
         }
-        .session-number { font-size: 1.2rem; font-weight: bold; color: #60efff; }
-        .delete-btn { background: red; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; color: white; }
         
-        /* Toggle Switches */
+        .session-number {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #60efff;
+        }
+        
+        .session-number i {
+            margin-right: 8px;
+        }
+        
+        .status-badge {
+            font-size: 0.7rem;
+            padding: 3px 8px;
+            border-radius: 20px;
+            background: rgba(0,255,135,0.2);
+            color: #00ff87;
+        }
+        
+        .delete-btn {
+            background: rgba(255,68,68,0.2);
+            border: none;
+            padding: 8px 12px;
+            border-radius: 10px;
+            cursor: pointer;
+            color: #ff4444;
+            transition: all 0.3s;
+        }
+        
+        .delete-btn:hover {
+            background: #ff4444;
+            color: white;
+        }
+        
+        /* Settings Items */
+        .setting-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 12px;
+        }
+        
+        .setting-item i {
+            width: 25px;
+            color: #60efff;
+        }
+        
+        /* Toggle Switch */
         .toggle-switch {
             position: relative;
             display: inline-block;
             width: 50px;
             height: 24px;
         }
-        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
         .slider {
             position: absolute;
             cursor: pointer;
@@ -91,10 +300,11 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background-color: #ccc;
+            background-color: #444;
             transition: 0.3s;
             border-radius: 24px;
         }
+        
         .slider:before {
             position: absolute;
             content: "";
@@ -106,242 +316,577 @@
             transition: 0.3s;
             border-radius: 50%;
         }
-        input:checked + .slider { background-color: #00ff87; }
-        input:checked + .slider:before { transform: translateX(26px); }
         
-        .setting-item {
+        input:checked + .slider {
+            background: linear-gradient(135deg, #00ff87, #60efff);
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+        
+        /* Rules Section */
+        .rules-section {
+            margin-top: 15px;
+        }
+        
+        .rules-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        
+        .rule-item {
+            background: rgba(255,255,255,0.05);
+            padding: 8px 12px;
+            margin: 5px 0;
+            border-radius: 8px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin: 10px 0;
-            padding: 8px;
-            background: rgba(255,255,255,0.05);
-            border-radius: 8px;
+            font-size: 0.85rem;
         }
         
-        /* Auto Reply Rules */
-        .rule-item {
-            background: rgba(255,255,255,0.05);
-            padding: 8px;
-            margin: 5px 0;
-            border-radius: 5px;
+        .rule-text {
             display: flex;
-            justify-content: space-between;
-            font-size: 0.9rem;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
         }
+        
+        .rule-keyword {
+            color: #00ff87;
+            font-weight: 600;
+        }
+        
+        .rule-reply {
+            color: #60efff;
+        }
+        
+        .delete-rule {
+            background: none;
+            border: none;
+            color: #ff4444;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        
         .add-rule {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             margin-top: 10px;
         }
+        
         .add-rule input {
             flex: 1;
-            padding: 8px;
-            border-radius: 5px;
+            padding: 10px;
+            border-radius: 10px;
             border: none;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            font-family: inherit;
         }
-        button {
-            background: #60efff;
+        
+        .add-rule input::placeholder {
+            color: #888;
+        }
+        
+        .add-rule button {
+            background: linear-gradient(135deg, #00ff87, #60efff);
             border: none;
-            padding: 8px 15px;
-            border-radius: 5px;
+            padding: 10px 15px;
+            border-radius: 10px;
             cursor: pointer;
-            font-weight: bold;
+            font-weight: 600;
         }
-        button.danger { background: #ff4444; color: white; }
+        
+        .view-deleted-btn {
+            background: none;
+            border: 1px solid rgba(0,255,135,0.3);
+            padding: 5px 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            color: #00ff87;
+            font-size: 0.8rem;
+        }
         
         /* Modal */
         .modal {
             display: none;
             position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8);
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            backdrop-filter: blur(10px);
             justify-content: center;
             align-items: center;
-        }
-        .modal-content {
-            background: #1a1a2e;
-            padding: 30px;
-            border-radius: 15px;
-            width: 90%;
-            max-width: 400px;
-        }
-        .modal-content input {
-            width: 100%;
-            padding: 10px;
-            margin: 10px 0;
-            border-radius: 5px;
-            border: none;
+            z-index: 1000;
         }
         
-        .footer { text-align: center; margin-top: 40px; padding: 20px; color: #888; }
-        @media (max-width: 768px) { .header { flex-direction: column; gap: 15px; text-align: center; } }
+        .modal-content {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            padding: 30px;
+            border-radius: 25px;
+            width: 90%;
+            max-width: 450px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .modal-content h3 {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .modal-content input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 12px;
+            border: none;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            font-family: inherit;
+        }
+        
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .modal-buttons button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #00ff87, #60efff);
+        }
+        
+        .btn-secondary {
+            background: #333;
+            color: white;
+        }
+        
+        .pair-code {
+            background: rgba(0,0,0,0.5);
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+            margin: 15px 0;
+        }
+        
+        .pair-code span {
+            font-size: 28px;
+            font-weight: bold;
+            letter-spacing: 4px;
+            color: #00ff87;
+        }
+        
+        /* Footer */
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            color: #888;
+            font-size: 0.85rem;
+        }
+        
+        .footer i {
+            color: #ff4444;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            .header {
+                flex-direction: column;
+                text-align: center;
+                gap: 15px;
+            }
+            .logo-area {
+                flex-direction: column;
+            }
+            .sessions-grid {
+                grid-template-columns: 1fr;
+            }
+            .section-title {
+                font-size: 1.2rem;
+            }
+        }
+        
+        /* Loading Animation */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: #00ff87;
+            animation: spin 0.8s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.05);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #00ff87, #60efff);
+            border-radius: 10px;
+        }
     </style>
 </head>
 <body>
+    <div class="bg-animation"></div>
+    
     <div class="container">
         <!-- Header -->
         <div class="header">
             <div class="logo-area">
-                <img src="logo.png" class="logo" alt="Logo" onerror="this.src='https://via.placeholder.com/60?text=HJ'">
+                <img src="logo.png" class="logo" alt="HJ-HACKER" onerror="this.src='https://via.placeholder.com/60?text=HJ'">
                 <div>
-                    <h1>HJ-HACKER 🔥</h1>
-                    <small>WhatsApp Automation Suite</small>
+                    <h1><i class="fas fa-skull"></i> HJ-HACKER</h1>
+                    <p><i class="fas fa-bolt"></i> Complete WhatsApp Automation Suite</p>
                 </div>
             </div>
             <a href="https://whatsapp.com/channel/0029VbAaNJ6C1FuB0mIAx93M" target="_blank" class="channel-btn">
-                📢 Join HJH TOOLS Official
+                <i class="fab fa-whatsapp"></i> Join HJH TOOLS Official
             </a>
         </div>
         
-        <!-- Stats -->
+        <!-- Stats Cards -->
         <div class="stats">
-            <div class="stat-card"><div class="stat-number" id="sessionCount">0</div><div>Sessions Active</div></div>
-            <div class="stat-card"><div class="stat-number" id="ruleCount">0</div><div>Auto Reply Rules</div></div>
-            <div class="stat-card"><div class="stat-number" id="deletedCount">0</div><div>Deleted Messages</div></div>
-        </div>
-        
-        <!-- Sessions Grid -->
-        <h2>📱 Connected Sessions</h2>
-        <div class="sessions-grid" id="sessionsGrid">
-            <div class="session-card add-session" onclick="showPairModal()" style="display: flex; justify-content: center; align-items: center; cursor: pointer;">
-                <div style="text-align: center;">➕<br>Add New Session</div>
+            <div class="stat-card">
+                <i class="fas fa-mobile-alt"></i>
+                <div class="stat-number" id="sessionCount">0</div>
+                <div class="stat-label">Active Sessions</div>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-robot"></i>
+                <div class="stat-number" id="ruleCount">0</div>
+                <div class="stat-label">Auto Reply Rules</div>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-trash-alt"></i>
+                <div class="stat-number" id="deletedCount">0</div>
+                <div class="stat-label">Deleted Captured</div>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-check-circle"></i>
+                <div class="stat-number" id="activeCount">0</div>
+                <div class="stat-label">Features Active</div>
             </div>
         </div>
         
+        <!-- Sessions Section -->
+        <div class="section-title">
+            <i class="fas fa-wifi"></i>
+            <h2>Connected Devices</h2>
+        </div>
+        
+        <div class="sessions-grid" id="sessionsGrid">
+            <div class="session-card add-session" onclick="showPairModal()">
+                <div class="add-session-content">
+                    <i class="fas fa-plus-circle"></i>
+                    <p>Add New Session</p>
+                    <small>Connect WhatsApp Device</small>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Features Section -->
+        <div class="section-title">
+            <i class="fas fa-star"></i>
+            <h2>Features</h2>
+        </div>
+        
+        <div class="stats" style="margin-bottom: 0;">
+            <div class="stat-card">
+                <i class="fas fa-reply-all"></i>
+                <div class="stat-label">Auto Reply</div>
+                <small>Smart keyword responses</small>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-eye-slash"></i>
+                <div class="stat-label">Anti Delete</div>
+                <small>Capture deleted messages</small>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-link"></i>
+                <div class="stat-label">Anti Link</div>
+                <small>Block spam links</small>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-images"></i>
+                <div class="stat-label">Get DP</div>
+                <small>Download profile pics</small>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-clock"></i>
+                <div class="stat-label">Auto Status</div>
+                <small>View & react automatically</small>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-save"></i>
+                <div class="stat-label">View Once Saver</div>
+                <small>Save disappearing media</small>
+            </div>
+        </div>
+        
+        <!-- Footer -->
         <div class="footer">
-            <p>© 2024 HJ-HACKER | Made with 🔥 | Features: Auto Reply | Anti Delete | Anti Link | Auto Status | Get DP | View Once Saver</p>
+            <p><i class="fas fa-skull"></i> HJ-HACKER | <i class="fas fa-code"></i> Made with <i class="fas fa-heart" style="color:#ff4444;"></i> for WhatsApp Automation</p>
+            <p><small>© 2024 All Features Active | Auto Update Every 5 Seconds</small></p>
         </div>
     </div>
     
     <!-- Pair Modal -->
     <div id="pairModal" class="modal">
         <div class="modal-content">
-            <h3>➕ Add WhatsApp Session</h3>
-            <input type="text" id="phoneNumber" placeholder="Enter phone number (e.g., 923001234567)" style="width:100%;">
-            <p style="font-size:12px; color:#aaa;">Code will be shown after pairing</p>
-            <button onclick="pairNumber()">Pair Device</button>
-            <button onclick="closeModal()" style="background:#333;">Cancel</button>
-            <div id="pairResult" style="margin-top:10px;"></div>
+            <h3><i class="fas fa-plus-circle"></i> Add WhatsApp Session</h3>
+            <p style="font-size: 0.85rem; color: #aaa;">Enter your WhatsApp number with country code</p>
+            <input type="text" id="phoneNumber" placeholder="Example: 923001234567" autocomplete="off">
+            <div class="modal-buttons">
+                <button class="btn-primary" onclick="pairNumber()"><i class="fas fa-link"></i> Generate Code</button>
+                <button class="btn-secondary" onclick="closeModal()"><i class="fas fa-times"></i> Cancel</button>
+            </div>
+            <div id="pairResult" style="margin-top: 15px;"></div>
         </div>
     </div>
     
     <script>
-        // API Base URL
         const API = window.location.origin;
         
-        // Load sessions on page load
+        // Load all data on page load
         loadSessions();
+        setInterval(loadSessions, 5000);
         
         async function loadSessions() {
-            const res = await fetch(`${API}/api/sessions`);
-            const data = await res.json();
-            const sessions = data.sessions || [];
-            
-            document.getElementById('sessionCount').innerText = sessions.length;
-            
-            let totalRules = 0;
-            sessions.forEach(s => totalRules += (s.settings?.autoReply?.length || 0));
-            document.getElementById('ruleCount').innerText = totalRules;
-            
-            const grid = document.getElementById('sessionsGrid');
-            grid.innerHTML = `
-                <div class="session-card add-session" onclick="showPairModal()" style="display: flex; justify-content: center; align-items: center; cursor: pointer;">
-                    <div style="text-align: center;">➕<br>Add New Session</div>
-                </div>
-            `;
-            
-            for (const session of sessions) {
-                // Load deleted logs count
-                const logsRes = await fetch(`${API}/api/antidelete/logs/${session.id}`);
-                const logsData = await logsRes.json();
-                const deletedCount = logsData.logs?.length || 0;
+            try {
+                const res = await fetch(`${API}/api/sessions`);
+                const data = await res.json();
+                const sessions = data.sessions || [];
                 
-                const card = document.createElement('div');
-                card.className = 'session-card';
-                card.innerHTML = `
-                    <div class="session-header">
-                        <span class="session-number">📱 ${session.number}</span>
-                        <button class="delete-btn" onclick="deleteSession('${session.id}')">Delete</button>
-                    </div>
-                    <div class="setting-item">
-                        <span>🛡️ Anti Delete</span>
-                        <label class="toggle-switch">
-                            <input type="checkbox" onchange="toggleAntiDelete('${session.id}', this.checked)" ${session.settings.antiDelete ? 'checked' : ''}>
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                    <div class="setting-item">
-                        <span>🔗 Anti Link</span>
-                        <label class="toggle-switch">
-                            <input type="checkbox" onchange="toggleAntiLink('${session.id}', this.checked)" ${session.settings.antiLink ? 'checked' : ''}>
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                    <div class="setting-item">
-                        <span>👁️ Auto Status View</span>
-                        <label class="toggle-switch">
-                            <input type="checkbox" onchange="toggleAutoStatus('${session.id}', this.checked)" ${session.settings.autoStatus ? 'checked' : ''}>
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                    <div class="setting-item">
-                        <span>📸 Save View Once</span>
-                        <label class="toggle-switch">
-                            <input type="checkbox" onchange="toggleViewOnce('${session.id}', this.checked)" ${session.settings.saveViewOnce ? 'checked' : ''}>
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                    <div class="setting-item">
-                        <span>📊 Deleted Captured: ${deletedCount}</span>
-                        <button onclick="viewDeleted('${session.id}')">View</button>
-                    </div>
-                    <div style="margin-top:15px;">
-                        <strong>🤖 Auto Reply Rules</strong>
-                        <div id="rules-${session.id}">
-                            ${(session.settings.autoReply || []).map(rule => `
-                                <div class="rule-item">
-                                    <span>🔑 ${rule.keyword} → 💬 ${rule.reply}</span>
-                                    <button onclick="deleteRule('${session.id}', ${rule.id})" style="background:#ff4444; padding:2px 8px;">×</button>
-                                </div>
-                            `).join('')}
-                        </div>
-                        <div class="add-rule">
-                            <input type="text" id="keyword-${session.id}" placeholder="Keyword">
-                            <input type="text" id="reply-${session.id}" placeholder="Auto Reply">
-                            <button onclick="addRule('${session.id}')">Add</button>
+                // Update stats
+                document.getElementById('sessionCount').innerText = sessions.length;
+                
+                let totalRules = 0;
+                let activeFeatures = 0;
+                
+                sessions.forEach(s => {
+                    totalRules += (s.settings?.autoReply?.length || 0);
+                    if (s.settings?.antiDelete) activeFeatures++;
+                    if (s.settings?.antiLink) activeFeatures++;
+                    if (s.settings?.autoStatus) activeFeatures++;
+                    if (s.settings?.saveViewOnce) activeFeatures++;
+                });
+                
+                document.getElementById('ruleCount').innerText = totalRules;
+                document.getElementById('activeCount').innerText = activeFeatures;
+                
+                // Build sessions grid
+                const grid = document.getElementById('sessionsGrid');
+                grid.innerHTML = `
+                    <div class="session-card add-session" onclick="showPairModal()">
+                        <div class="add-session-content">
+                            <i class="fas fa-plus-circle"></i>
+                            <p>Add New Session</p>
+                            <small>Connect WhatsApp Device</small>
                         </div>
                     </div>
                 `;
-                grid.appendChild(card);
+                
+                for (const session of sessions) {
+                    // Get deleted logs count
+                    let deletedCount = 0;
+                    try {
+                        const logsRes = await fetch(`${API}/api/antidelete/logs/${session.id}`);
+                        const logsData = await logsRes.json();
+                        deletedCount = logsData.logs?.length || 0;
+                    } catch(e) {}
+                    
+                    // Update total deleted count
+                    const currentTotal = parseInt(document.getElementById('deletedCount').innerText) || 0;
+                    document.getElementById('deletedCount').innerText = currentTotal + deletedCount;
+                    
+                    const rules = session.settings?.autoReply || [];
+                    
+                    const card = document.createElement('div');
+                    card.className = 'session-card';
+                    card.innerHTML = `
+                        <div class="session-header">
+                            <div>
+                                <div class="session-number">
+                                    <i class="fab fa-whatsapp"></i> ${session.number}
+                                </div>
+                                <span class="status-badge"><i class="fas fa-circle" style="font-size: 8px; color: #00ff87;"></i> ${session.status || 'active'}</span>
+                            </div>
+                            <button class="delete-btn" onclick="deleteSession('${session.id}')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                        
+                        <div class="setting-item">
+                            <span><i class="fas fa-eye-slash"></i> Anti Delete</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" onchange="toggleAntiDelete('${session.id}', this.checked)" ${session.settings?.antiDelete ? 'checked' : ''}>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        
+                        <div class="setting-item">
+                            <span><i class="fas fa-link"></i> Anti Link</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" onchange="toggleAntiLink('${session.id}', this.checked)" ${session.settings?.antiLink ? 'checked' : ''}>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        
+                        <div class="setting-item">
+                            <span><i class="fas fa-clock"></i> Auto Status View</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" onchange="toggleAutoStatus('${session.id}', this.checked)" ${session.settings?.autoStatus ? 'checked' : ''}>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        
+                        <div class="setting-item">
+                            <span><i class="fas fa-save"></i> View Once Saver</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" onchange="toggleViewOnce('${session.id}', this.checked)" ${session.settings?.saveViewOnce ? 'checked' : ''}>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        
+                        <div class="setting-item">
+                            <span><i class="fas fa-trash-alt"></i> Deleted Captured: ${deletedCount}</span>
+                            <button class="view-deleted-btn" onclick="viewDeleted('${session.id}')">
+                                <i class="fas fa-eye"></i> View
+                            </button>
+                        </div>
+                        
+                        <div class="rules-section">
+                            <div class="rules-title">
+                                <i class="fas fa-robot"></i> Auto Reply Rules
+                            </div>
+                            <div id="rules-${session.id}">
+                                ${rules.map(rule => `
+                                    <div class="rule-item">
+                                        <div class="rule-text">
+                                            <i class="fas fa-key"></i>
+                                            <span class="rule-keyword">${escapeHtml(rule.keyword)}</span>
+                                            <i class="fas fa-arrow-right"></i>
+                                            <span class="rule-reply">${escapeHtml(rule.reply)}</span>
+                                        </div>
+                                        <button class="delete-rule" onclick="deleteRule('${session.id}', ${rule.id})">
+                                            <i class="fas fa-times-circle"></i>
+                                        </button>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            <div class="add-rule">
+                                <input type="text" id="keyword-${session.id}" placeholder="Keyword" autocomplete="off">
+                                <input type="text" id="reply-${session.id}" placeholder="Auto Reply" autocomplete="off">
+                                <button onclick="addRule('${session.id}')"><i class="fas fa-plus"></i></button>
+                            </div>
+                        </div>
+                    `;
+                    grid.appendChild(card);
+                }
+            } catch (error) {
+                console.error('Load error:', error);
             }
+        }
+        
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
         
         async function pairNumber() {
             const number = document.getElementById('phoneNumber').value;
-            if (!number) {
-                alert('Enter phone number');
+            if (!number || number.length < 10) {
+                alert('Please enter a valid number with country code (e.g., 923001234567)');
                 return;
             }
             
-            const res = await fetch(`${API}/api/pair`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ number })
-            });
-            const data = await res.json();
+            const resultDiv = document.getElementById('pairResult');
+            resultDiv.innerHTML = '<div class="loading"></div> <span style="margin-left: 10px;">Generating pairing code...</span>';
             
-            if (data.success) {
-                document.getElementById('pairResult').innerHTML = `<p style="color:#00ff87;">✅ Success! Pairing Code: <strong>${data.code}</strong><br>Open WhatsApp → Linked Devices → Link with code → Enter this code</p>`;
-                setTimeout(() => { closeModal(); loadSessions(); }, 3000);
-            } else {
-                document.getElementById('pairResult').innerHTML = `<p style="color:#ff4444;">❌ Failed: ${data.error}</p>`;
+            try {
+                const res = await fetch(`${API}/api/pair`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ number })
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    resultDiv.innerHTML = `
+                        <div class="pair-code">
+                            <i class="fas fa-qrcode"></i>
+                            <p>Your Pairing Code:</p>
+                            <span>${data.code}</span>
+                            <p style="font-size: 12px; margin-top: 10px;">
+                                <i class="fab fa-whatsapp"></i> 
+                                Open WhatsApp → Settings → Linked Devices → Link with code
+                            </p>
+                        </div>
+                        <button class="btn-primary" style="width: 100%;" onclick="confirmPairing('${number}')">
+                            <i class="fas fa-check"></i> I've Connected
+                        </button>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<p style="color: #ff4444;"><i class="fas fa-exclamation-triangle"></i> ${data.error}</p>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p style="color: #ff4444;"><i class="fas fa-exclamation-triangle"></i> Connection error: ${error.message}</p>`;
+            }
+        }
+        
+        async function confirmPairing(number) {
+            try {
+                const res = await fetch(`${API}/api/confirm/${number}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert('✅ Session confirmed! Device linked successfully.');
+                    closeModal();
+                    loadSessions();
+                } else {
+                    alert('⚠️ Please make sure you entered the code in WhatsApp, then try again.');
+                }
+            } catch (error) {
+                alert('Error confirming session');
             }
         }
         
         async function deleteSession(id) {
-            if (confirm('Delete this session?')) {
+            if (confirm('⚠️ Remove this session? All settings will be deleted.')) {
                 await fetch(`${API}/api/session/${id}`, { method: 'DELETE' });
                 loadSessions();
             }
@@ -350,13 +895,17 @@
         async function addRule(sessionId) {
             const keyword = document.getElementById(`keyword-${sessionId}`).value;
             const reply = document.getElementById(`reply-${sessionId}`).value;
-            if (!keyword || !reply) return;
+            if (!keyword || !reply) {
+                alert('Please enter both keyword and reply');
+                return;
+            }
             
             await fetch(`${API}/api/autoreply/${sessionId}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ keyword, reply })
             });
+            
             document.getElementById(`keyword-${sessionId}`).value = '';
             document.getElementById(`reply-${sessionId}`).value = '';
             loadSessions();
@@ -403,9 +952,13 @@
             const res = await fetch(`${API}/api/antidelete/logs/${sessionId}`);
             const data = await res.json();
             if (data.logs.length === 0) {
-                alert('No deleted messages captured yet');
+                alert('📭 No deleted messages captured yet.');
             } else {
-                alert('Deleted Messages:\n' + data.logs.map(l => `📩 ${l.message || 'Media'}`).join('\n'));
+                let message = '🗑️ Deleted Messages:\n\n';
+                data.logs.forEach((log, i) => {
+                    message += `${i+1}. ${log.message || '[Media/Image]'}\n   📅 ${new Date(log.capturedAt).toLocaleString()}\n\n`;
+                });
+                alert(message);
             }
         }
         
@@ -419,8 +972,13 @@
             document.getElementById('pairModal').style.display = 'none';
         }
         
-        // Auto refresh every 5 seconds
-        setInterval(loadSessions, 5000);
+        // Close modal on outside click
+        window.onclick = function(event) {
+            const modal = document.getElementById('pairModal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        }
     </script>
 </body>
 </html>
