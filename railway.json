@@ -5,8 +5,6 @@
   },
   "deploy": {
     "startCommand": "node index.js",
-    "restartPolicyType": "ON_FAILURE",
-    "healthcheckPath": "/health",
-    "healthcheckTimeout": 100
+    "restartPolicyType": "ON_FAILURE"
   }
 }
