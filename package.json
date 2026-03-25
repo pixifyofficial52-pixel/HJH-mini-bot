@@ -1,13 +1,16 @@
 {
-  "name": "hj-hacker-pairing",
+  "name": "hj-hacker-wa-bot",
   "version": "1.0.0",
-  "description": "WhatsApp Pairing Code Generator",
-  "main": "server.js",
+  "description": "WhatsApp Bot with Full Automation",
+  "main": "index.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node index.js",
+    "dev": "nodemon index.js"
   },
   "dependencies": {
     "express": "^4.18.2",
-    "cors": "^2.8.5"
+    "cors": "^2.8.5",
+    "fs": "^0.0.1-security",
+    "qrcode-terminal": "^0.12.0"
   }
 }
