@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>HJ-HACKER - WhatsApp Automation Suite</title>
+    <title>HJ-HACKER - WhatsApp Pairing Code Generator</title>
     
-    <!-- Font Awesome 6 (Free CDN) -->
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
     <style>
         * {
@@ -19,514 +19,293 @@
         }
         
         body {
-            font-family: 'Poppins', sans-serif;
-            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
-            color: white;
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+            color: #fff;
             min-height: 100vh;
-            overflow-x: hidden;
         }
         
         /* Animated Background */
-        .bg-animation {
+        .bg-effect {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
             z-index: -1;
-            overflow: hidden;
-        }
-        
-        .bg-animation::before {
-            content: '';
-            position: absolute;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(0,255,135,0.1) 0%, transparent 70%);
-            animation: rotate 20s linear infinite;
-        }
-        
-        @keyframes rotate {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            background: radial-gradient(circle at 20% 50%, rgba(0,255,135,0.05) 0%, transparent 50%);
         }
         
         .container {
             max-width: 1400px;
             margin: 0 auto;
             padding: 20px;
-            position: relative;
-            z-index: 1;
         }
         
         /* Header */
         .header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            padding: 20px 30px;
-            background: rgba(255,255,255,0.05);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            margin-bottom: 30px;
-            border: 1px solid rgba(255,255,255,0.1);
-            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-        }
-        
-        .logo-area {
-            display: flex;
-            align-items: center;
-            gap: 15px;
+            text-align: center;
+            padding: 40px 20px;
         }
         
         .logo {
-            width: 60px;
-            height: 60px;
-            border-radius: 15px;
-            object-fit: cover;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #00ff87, #60efff);
+            border-radius: 25px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,255,135,0.3);
         }
         
-        .logo-area h1 {
-            font-size: 1.8rem;
+        .logo i {
+            font-size: 40px;
+            color: #0a0a0a;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
             background: linear-gradient(135deg, #00ff87, #60efff);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            background-clip: text;
+            margin-bottom: 10px;
         }
         
-        .logo-area p {
-            font-size: 0.8rem;
-            color: #aaa;
+        .tagline {
+            color: #888;
+            margin-bottom: 30px;
         }
         
-        .channel-btn {
-            background: linear-gradient(135deg, #25D366, #128C7E);
-            padding: 12px 25px;
-            border-radius: 50px;
-            text-decoration: none;
-            color: white;
-            font-weight: 600;
-            transition: transform 0.3s, box-shadow 0.3s;
-            display: inline-flex;
+        /* Stats Bar */
+        .stats-bar {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 15px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .stat-item {
+            display: flex;
             align-items: center;
             gap: 10px;
         }
         
-        .channel-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(37,211,102,0.3);
-        }
-        
-        /* Stats Cards */
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-        
-        .stat-card {
-            background: rgba(255,255,255,0.05);
-            backdrop-filter: blur(10px);
-            padding: 20px;
-            border-radius: 20px;
-            text-align: center;
-            border: 1px solid rgba(255,255,255,0.1);
-            transition: transform 0.3s;
-        }
-        
-        .stat-card:hover {
-            transform: translateY(-5px);
-            background: rgba(255,255,255,0.1);
-        }
-        
-        .stat-card i {
-            font-size: 2rem;
+        .stat-item i {
+            font-size: 20px;
             color: #00ff87;
-            margin-bottom: 10px;
         }
         
-        .stat-number {
-            font-size: 2.5rem;
-            font-weight: 800;
-            background: linear-gradient(135deg, #00ff87, #60efff);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+        .stat-value {
+            font-weight: 700;
+            font-size: 1.2rem;
         }
         
         .stat-label {
-            font-size: 0.9rem;
-            color: #ccc;
-            margin-top: 5px;
-        }
-        
-        /* Section Title */
-        .section-title {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin: 30px 0 20px;
-            font-size: 1.5rem;
-        }
-        
-        .section-title i {
-            color: #00ff87;
-        }
-        
-        /* Sessions Grid */
-        .sessions-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-        
-        .session-card {
-            background: rgba(255,255,255,0.05);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 20px;
-            border: 1px solid rgba(255,255,255,0.1);
-            transition: all 0.3s;
-        }
-        
-        .session-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-        }
-        
-        .add-session {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            border: 2px dashed rgba(0,255,135,0.3);
-            background: rgba(0,255,135,0.05);
-        }
-        
-        .add-session:hover {
-            border-color: #00ff87;
-            background: rgba(0,255,135,0.1);
-        }
-        
-        .add-session-content {
-            text-align: center;
-        }
-        
-        .add-session-content i {
-            font-size: 3rem;
-            color: #00ff87;
-            margin-bottom: 10px;
-        }
-        
-        .session-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
-        
-        .session-number {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: #60efff;
-        }
-        
-        .session-number i {
-            margin-right: 8px;
-        }
-        
-        .status-badge {
-            font-size: 0.7rem;
-            padding: 3px 8px;
-            border-radius: 20px;
-            background: rgba(0,255,135,0.2);
-            color: #00ff87;
-        }
-        
-        .delete-btn {
-            background: rgba(255,68,68,0.2);
-            border: none;
-            padding: 8px 12px;
-            border-radius: 10px;
-            cursor: pointer;
-            color: #ff4444;
-            transition: all 0.3s;
-        }
-        
-        .delete-btn:hover {
-            background: #ff4444;
-            color: white;
-        }
-        
-        /* Settings Items */
-        .setting-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin: 10px 0;
-            padding: 10px;
-            background: rgba(255,255,255,0.03);
-            border-radius: 12px;
-        }
-        
-        .setting-item i {
-            width: 25px;
-            color: #60efff;
-        }
-        
-        /* Toggle Switch */
-        .toggle-switch {
-            position: relative;
-            display: inline-block;
-            width: 50px;
-            height: 24px;
-        }
-        
-        .toggle-switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-        
-        .slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #444;
-            transition: 0.3s;
-            border-radius: 24px;
-        }
-        
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 18px;
-            width: 18px;
-            left: 3px;
-            bottom: 3px;
-            background-color: white;
-            transition: 0.3s;
-            border-radius: 50%;
-        }
-        
-        input:checked + .slider {
-            background: linear-gradient(135deg, #00ff87, #60efff);
-        }
-        
-        input:checked + .slider:before {
-            transform: translateX(26px);
-        }
-        
-        /* Rules Section */
-        .rules-section {
-            margin-top: 15px;
-        }
-        
-        .rules-title {
-            font-size: 0.9rem;
-            font-weight: 600;
-            margin-bottom: 10px;
-        }
-        
-        .rule-item {
-            background: rgba(255,255,255,0.05);
-            padding: 8px 12px;
-            margin: 5px 0;
-            border-radius: 8px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            color: #888;
             font-size: 0.85rem;
         }
         
-        .rule-text {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex-wrap: wrap;
+        .channel-link {
+            background: rgba(37,211,102,0.2);
+            padding: 8px 20px;
+            border-radius: 30px;
+            text-decoration: none;
+            color: #25D366;
+            font-size: 0.9rem;
+            transition: all 0.3s;
         }
         
-        .rule-keyword {
-            color: #00ff87;
-            font-weight: 600;
-        }
-        
-        .rule-reply {
-            color: #60efff;
-        }
-        
-        .delete-rule {
-            background: none;
-            border: none;
-            color: #ff4444;
-            cursor: pointer;
-            font-size: 1rem;
-        }
-        
-        .add-rule {
-            display: flex;
-            gap: 8px;
-            margin-top: 10px;
-        }
-        
-        .add-rule input {
-            flex: 1;
-            padding: 10px;
-            border-radius: 10px;
-            border: none;
-            background: rgba(255,255,255,0.1);
+        .channel-link:hover {
+            background: #25D366;
             color: white;
-            font-family: inherit;
         }
         
-        .add-rule input::placeholder {
-            color: #888;
-        }
-        
-        .add-rule button {
-            background: linear-gradient(135deg, #00ff87, #60efff);
-            border: none;
-            padding: 10px 15px;
-            border-radius: 10px;
-            cursor: pointer;
-            font-weight: 600;
-        }
-        
-        .view-deleted-btn {
-            background: none;
-            border: 1px solid rgba(0,255,135,0.3);
-            padding: 5px 10px;
-            border-radius: 8px;
-            cursor: pointer;
-            color: #00ff87;
-            font-size: 0.8rem;
-        }
-        
-        /* Modal */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.9);
+        /* Main Card */
+        .main-card {
+            background: rgba(255,255,255,0.03);
             backdrop-filter: blur(10px);
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-        
-        .modal-content {
-            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            border-radius: 30px;
             padding: 30px;
-            border-radius: 25px;
-            width: 90%;
-            max-width: 450px;
             border: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 30px;
         }
         
-        .modal-content h3 {
+        /* Server Selection */
+        .server-section {
+            margin-bottom: 30px;
+        }
+        
+        .section-title {
+            font-size: 1.2rem;
             margin-bottom: 20px;
             display: flex;
             align-items: center;
             gap: 10px;
         }
         
-        .modal-content input {
-            width: 100%;
-            padding: 12px;
-            margin: 10px 0;
-            border-radius: 12px;
-            border: none;
-            background: rgba(255,255,255,0.1);
-            color: white;
-            font-family: inherit;
-        }
-        
-        .modal-buttons {
-            display: flex;
-            gap: 10px;
-            margin-top: 15px;
-        }
-        
-        .modal-buttons button {
-            flex: 1;
-            padding: 12px;
-            border: none;
-            border-radius: 12px;
-            cursor: pointer;
-            font-weight: 600;
-        }
-        
-        .btn-primary {
-            background: linear-gradient(135deg, #00ff87, #60efff);
-        }
-        
-        .btn-secondary {
-            background: #333;
-            color: white;
-        }
-        
-        .pair-code {
-            background: rgba(0,0,0,0.5);
-            padding: 15px;
-            border-radius: 12px;
-            text-align: center;
-            margin: 15px 0;
-        }
-        
-        .pair-code span {
-            font-size: 28px;
-            font-weight: bold;
-            letter-spacing: 4px;
+        .section-title i {
             color: #00ff87;
         }
         
-        /* Footer */
-        .footer {
+        .servers-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .server-card {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 15px 10px;
             text-align: center;
-            margin-top: 40px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .server-card:hover {
+            background: rgba(0,255,135,0.1);
+            border-color: #00ff87;
+            transform: translateY(-2px);
+        }
+        
+        .server-card.active {
+            background: linear-gradient(135deg, rgba(0,255,135,0.2), rgba(96,239,255,0.2));
+            border-color: #00ff87;
+            box-shadow: 0 0 20px rgba(0,255,135,0.2);
+        }
+        
+        .server-icon {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+        
+        .server-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        
+        .server-status {
+            font-size: 0.7rem;
+            color: #00ff87;
+            margin-top: 5px;
+        }
+        
+        /* Input Area */
+        .input-area {
+            margin-top: 30px;
+        }
+        
+        .input-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        
+        .input-group input {
+            flex: 1;
+            padding: 15px 20px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 15px;
+            color: white;
+            font-size: 1rem;
+            font-family: inherit;
+        }
+        
+        .input-group input:focus {
+            outline: none;
+            border-color: #00ff87;
+        }
+        
+        .generate-btn {
+            padding: 15px 40px;
+            background: linear-gradient(135deg, #00ff87, #60efff);
+            border: none;
+            border-radius: 15px;
+            color: #0a0a0a;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .generate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,255,135,0.3);
+        }
+        
+        .generate-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        /* Result Area */
+        .result-area {
+            margin-top: 30px;
             padding: 20px;
-            border-top: 1px solid rgba(255,255,255,0.1);
+            background: rgba(0,0,0,0.3);
+            border-radius: 20px;
+            text-align: center;
+        }
+        
+        .result-label {
             color: #888;
+            font-size: 0.85rem;
+            margin-bottom: 10px;
+        }
+        
+        .code-display {
+            font-size: 2.5rem;
+            font-weight: 800;
+            letter-spacing: 8px;
+            background: linear-gradient(135deg, #00ff87, #60efff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 15px 0;
+            font-family: monospace;
+        }
+        
+        .copy-btn {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            padding: 10px 25px;
+            border-radius: 10px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .copy-btn:hover {
+            background: rgba(0,255,135,0.2);
+            border-color: #00ff87;
+        }
+        
+        .success-msg {
+            color: #00ff87;
+            margin-top: 10px;
             font-size: 0.85rem;
         }
         
-        .footer i {
+        .error-msg {
             color: #ff4444;
+            margin-top: 10px;
         }
         
-        /* Responsive */
-        @media (max-width: 768px) {
-            .container {
-                padding: 15px;
-            }
-            .header {
-                flex-direction: column;
-                text-align: center;
-                gap: 15px;
-            }
-            .logo-area {
-                flex-direction: column;
-            }
-            .sessions-grid {
-                grid-template-columns: 1fr;
-            }
-            .section-title {
-                font-size: 1.2rem;
-            }
-        }
-        
-        /* Loading Animation */
         .loading {
             display: inline-block;
             width: 20px;
@@ -541,444 +320,280 @@
             to { transform: rotate(360deg); }
         }
         
-        /* Scrollbar */
-        ::-webkit-scrollbar {
-            width: 8px;
+        /* Instructions */
+        .instructions {
+            background: rgba(0,255,135,0.05);
+            border-radius: 20px;
+            padding: 20px;
+            margin-top: 30px;
         }
         
-        ::-webkit-scrollbar-track {
-            background: rgba(255,255,255,0.05);
+        .instructions h4 {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
         
-        ::-webkit-scrollbar-thumb {
-            background: linear-gradient(135deg, #00ff87, #60efff);
-            border-radius: 10px;
+        .steps {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+        }
+        
+        .step {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #aaa;
+            font-size: 0.85rem;
+        }
+        
+        .step-number {
+            width: 28px;
+            height: 28px;
+            background: rgba(0,255,135,0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #00ff87;
+            font-weight: bold;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 30px;
+            color: #666;
+            font-size: 0.8rem;
+        }
+        
+        @media (max-width: 768px) {
+            .servers-grid {
+                grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            }
+            .code-display {
+                font-size: 1.5rem;
+                letter-spacing: 4px;
+            }
+            .stats-bar {
+                flex-direction: column;
+                text-align: center;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="bg-animation"></div>
+    <div class="bg-effect"></div>
     
     <div class="container">
         <!-- Header -->
         <div class="header">
-            <div class="logo-area">
-                <img src="logo.png" class="logo" alt="HJ-HACKER" onerror="this.src='https://via.placeholder.com/60?text=HJ'">
+            <div class="logo">
+                <i class="fas fa-skull"></i>
+            </div>
+            <h1>HJ-HACKER</h1>
+            <p class="tagline">Premium WhatsApp Pairing Code Generator</p>
+        </div>
+        
+        <!-- Stats Bar -->
+        <div class="stats-bar">
+            <div class="stat-item">
+                <i class="fas fa-server"></i>
                 <div>
-                    <h1><i class="fas fa-skull"></i> HJ-HACKER</h1>
-                    <p><i class="fas fa-bolt"></i> Complete WhatsApp Automation Suite</p>
+                    <span class="stat-value" id="activeServers">32</span>
+                    <span class="stat-label"> Active Servers</span>
                 </div>
             </div>
-            <a href="https://whatsapp.com/channel/0029VbAaNJ6C1FuB0mIAx93M" target="_blank" class="channel-btn">
-                <i class="fab fa-whatsapp"></i> Join HJH TOOLS Official
+            <div class="stat-item">
+                <i class="fas fa-users"></i>
+                <div>
+                    <span class="stat-value" id="activeUsers">0</span>
+                    <span class="stat-label"> / 50 Active</span>
+                </div>
+            </div>
+            <a href="https://whatsapp.com/channel/0029VbAaNJ6C1FuB0mIAx93M" target="_blank" class="channel-link">
+                <i class="fab fa-whatsapp"></i> Join HJH TOOLS
             </a>
         </div>
         
-        <!-- Stats Cards -->
-        <div class="stats">
-            <div class="stat-card">
-                <i class="fas fa-mobile-alt"></i>
-                <div class="stat-number" id="sessionCount">0</div>
-                <div class="stat-label">Active Sessions</div>
-            </div>
-            <div class="stat-card">
-                <i class="fas fa-robot"></i>
-                <div class="stat-number" id="ruleCount">0</div>
-                <div class="stat-label">Auto Reply Rules</div>
-            </div>
-            <div class="stat-card">
-                <i class="fas fa-trash-alt"></i>
-                <div class="stat-number" id="deletedCount">0</div>
-                <div class="stat-label">Deleted Captured</div>
-            </div>
-            <div class="stat-card">
-                <i class="fas fa-check-circle"></i>
-                <div class="stat-number" id="activeCount">0</div>
-                <div class="stat-label">Features Active</div>
-            </div>
-        </div>
-        
-        <!-- Sessions Section -->
-        <div class="section-title">
-            <i class="fas fa-wifi"></i>
-            <h2>Connected Devices</h2>
-        </div>
-        
-        <div class="sessions-grid" id="sessionsGrid">
-            <div class="session-card add-session" onclick="showPairModal()">
-                <div class="add-session-content">
-                    <i class="fas fa-plus-circle"></i>
-                    <p>Add New Session</p>
-                    <small>Connect WhatsApp Device</small>
+        <!-- Main Card -->
+        <div class="main-card">
+            <div class="server-section">
+                <div class="section-title">
+                    <i class="fas fa-server"></i>
+                    <span>⚡ Select a Server</span>
+                </div>
+                <div class="servers-grid" id="serversGrid">
+                    <!-- Servers will be generated here -->
                 </div>
             </div>
-        </div>
-        
-        <!-- Features Section -->
-        <div class="section-title">
-            <i class="fas fa-star"></i>
-            <h2>Features</h2>
-        </div>
-        
-        <div class="stats" style="margin-bottom: 0;">
-            <div class="stat-card">
-                <i class="fas fa-reply-all"></i>
-                <div class="stat-label">Auto Reply</div>
-                <small>Smart keyword responses</small>
+            
+            <div class="input-area">
+                <div class="section-title">
+                    <i class="fas fa-mobile-alt"></i>
+                    <span>📱 Enter Your Number</span>
+                </div>
+                <div class="input-group">
+                    <input type="text" id="phoneNumber" placeholder="Include country code (e.g., 92 for Pakistan)" autocomplete="off">
+                    <button class="generate-btn" id="generateBtn" onclick="generateCode()">
+                        <i class="fas fa-bolt"></i> Generate Code
+                    </button>
+                </div>
             </div>
-            <div class="stat-card">
-                <i class="fas fa-eye-slash"></i>
-                <div class="stat-label">Anti Delete</div>
-                <small>Capture deleted messages</small>
-            </div>
-            <div class="stat-card">
-                <i class="fas fa-link"></i>
-                <div class="stat-label">Anti Link</div>
-                <small>Block spam links</small>
-            </div>
-            <div class="stat-card">
-                <i class="fas fa-images"></i>
-                <div class="stat-label">Get DP</div>
-                <small>Download profile pics</small>
-            </div>
-            <div class="stat-card">
-                <i class="fas fa-clock"></i>
-                <div class="stat-label">Auto Status</div>
-                <small>View & react automatically</small>
-            </div>
-            <div class="stat-card">
-                <i class="fas fa-save"></i>
-                <div class="stat-label">View Once Saver</div>
-                <small>Save disappearing media</small>
+            
+            <div class="result-area" id="resultArea">
+                <div class="result-label">
+                    <i class="fas fa-qrcode"></i> Your Pairing Code
+                </div>
+                <div class="code-display" id="codeDisplay">
+                    ---
+                </div>
+                <button class="copy-btn" id="copyBtn" onclick="copyCode()" style="display: none;">
+                    <i class="fas fa-copy"></i> Copy Code
+                </button>
+                <div id="messageArea"></div>
             </div>
         </div>
         
-        <!-- Footer -->
+        <!-- Instructions -->
+        <div class="instructions">
+            <h4><i class="fas fa-info-circle"></i> How to Connect</h4>
+            <div class="steps">
+                <div class="step"><span class="step-number">1</span> Select any server above</div>
+                <div class="step"><span class="step-number">2</span> Enter your WhatsApp number</div>
+                <div class="step"><span class="step-number">3</span> Click Generate Code</div>
+                <div class="step"><span class="step-number">4</span> Open WhatsApp → Settings → Linked Devices</div>
+                <div class="step"><span class="step-number">5</span> Tap "Link with code" and enter the code</div>
+            </div>
+        </div>
+        
         <div class="footer">
-            <p><i class="fas fa-skull"></i> HJ-HACKER | <i class="fas fa-code"></i> Made with <i class="fas fa-heart" style="color:#ff4444;"></i> for WhatsApp Automation</p>
-            <p><small>© 2024 All Features Active | Auto Update Every 5 Seconds</small></p>
-        </div>
-    </div>
-    
-    <!-- Pair Modal -->
-    <div id="pairModal" class="modal">
-        <div class="modal-content">
-            <h3><i class="fas fa-plus-circle"></i> Add WhatsApp Session</h3>
-            <p style="font-size: 0.85rem; color: #aaa;">Enter your WhatsApp number with country code</p>
-            <input type="text" id="phoneNumber" placeholder="Example: 923001234567" autocomplete="off">
-            <div class="modal-buttons">
-                <button class="btn-primary" onclick="pairNumber()"><i class="fas fa-link"></i> Generate Code</button>
-                <button class="btn-secondary" onclick="closeModal()"><i class="fas fa-times"></i> Cancel</button>
-            </div>
-            <div id="pairResult" style="margin-top: 15px;"></div>
+            <p><i class="fas fa-skull"></i> HJ-HACKER | Premium WhatsApp Pairing Service</p>
+            <p><small>No deployment needed | Instant code generation</small></p>
         </div>
     </div>
     
     <script>
-        const API = window.location.origin;
+        let selectedServer = 1;
+        let currentCode = '';
         
-        // Load all data on page load
-        loadSessions();
-        setInterval(loadSessions, 5000);
+        // Generate 32 servers
+        const serversGrid = document.getElementById('serversGrid');
+        for (let i = 1; i <= 32; i++) {
+            const serverCard = document.createElement('div');
+            serverCard.className = `server-card ${i === 1 ? 'active' : ''}`;
+            serverCard.onclick = () => selectServer(i);
+            serverCard.innerHTML = `
+                <div class="server-icon"><i class="fas fa-microchip"></i></div>
+                <div class="server-name">Server ${i}</div>
+                <div class="server-status"><i class="fas fa-circle" style="font-size: 8px;"></i> Active</div>
+            `;
+            serversGrid.appendChild(serverCard);
+        }
         
-        async function loadSessions() {
-            try {
-                const res = await fetch(`${API}/api/sessions`);
-                const data = await res.json();
-                const sessions = data.sessions || [];
-                
-                // Update stats
-                document.getElementById('sessionCount').innerText = sessions.length;
-                
-                let totalRules = 0;
-                let activeFeatures = 0;
-                
-                sessions.forEach(s => {
-                    totalRules += (s.settings?.autoReply?.length || 0);
-                    if (s.settings?.antiDelete) activeFeatures++;
-                    if (s.settings?.antiLink) activeFeatures++;
-                    if (s.settings?.autoStatus) activeFeatures++;
-                    if (s.settings?.saveViewOnce) activeFeatures++;
-                });
-                
-                document.getElementById('ruleCount').innerText = totalRules;
-                document.getElementById('activeCount').innerText = activeFeatures;
-                
-                // Build sessions grid
-                const grid = document.getElementById('sessionsGrid');
-                grid.innerHTML = `
-                    <div class="session-card add-session" onclick="showPairModal()">
-                        <div class="add-session-content">
-                            <i class="fas fa-plus-circle"></i>
-                            <p>Add New Session</p>
-                            <small>Connect WhatsApp Device</small>
-                        </div>
-                    </div>
-                `;
-                
-                for (const session of sessions) {
-                    // Get deleted logs count
-                    let deletedCount = 0;
-                    try {
-                        const logsRes = await fetch(`${API}/api/antidelete/logs/${session.id}`);
-                        const logsData = await logsRes.json();
-                        deletedCount = logsData.logs?.length || 0;
-                    } catch(e) {}
-                    
-                    // Update total deleted count
-                    const currentTotal = parseInt(document.getElementById('deletedCount').innerText) || 0;
-                    document.getElementById('deletedCount').innerText = currentTotal + deletedCount;
-                    
-                    const rules = session.settings?.autoReply || [];
-                    
-                    const card = document.createElement('div');
-                    card.className = 'session-card';
-                    card.innerHTML = `
-                        <div class="session-header">
-                            <div>
-                                <div class="session-number">
-                                    <i class="fab fa-whatsapp"></i> ${session.number}
-                                </div>
-                                <span class="status-badge"><i class="fas fa-circle" style="font-size: 8px; color: #00ff87;"></i> ${session.status || 'active'}</span>
-                            </div>
-                            <button class="delete-btn" onclick="deleteSession('${session.id}')">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                        
-                        <div class="setting-item">
-                            <span><i class="fas fa-eye-slash"></i> Anti Delete</span>
-                            <label class="toggle-switch">
-                                <input type="checkbox" onchange="toggleAntiDelete('${session.id}', this.checked)" ${session.settings?.antiDelete ? 'checked' : ''}>
-                                <span class="slider"></span>
-                            </label>
-                        </div>
-                        
-                        <div class="setting-item">
-                            <span><i class="fas fa-link"></i> Anti Link</span>
-                            <label class="toggle-switch">
-                                <input type="checkbox" onchange="toggleAntiLink('${session.id}', this.checked)" ${session.settings?.antiLink ? 'checked' : ''}>
-                                <span class="slider"></span>
-                            </label>
-                        </div>
-                        
-                        <div class="setting-item">
-                            <span><i class="fas fa-clock"></i> Auto Status View</span>
-                            <label class="toggle-switch">
-                                <input type="checkbox" onchange="toggleAutoStatus('${session.id}', this.checked)" ${session.settings?.autoStatus ? 'checked' : ''}>
-                                <span class="slider"></span>
-                            </label>
-                        </div>
-                        
-                        <div class="setting-item">
-                            <span><i class="fas fa-save"></i> View Once Saver</span>
-                            <label class="toggle-switch">
-                                <input type="checkbox" onchange="toggleViewOnce('${session.id}', this.checked)" ${session.settings?.saveViewOnce ? 'checked' : ''}>
-                                <span class="slider"></span>
-                            </label>
-                        </div>
-                        
-                        <div class="setting-item">
-                            <span><i class="fas fa-trash-alt"></i> Deleted Captured: ${deletedCount}</span>
-                            <button class="view-deleted-btn" onclick="viewDeleted('${session.id}')">
-                                <i class="fas fa-eye"></i> View
-                            </button>
-                        </div>
-                        
-                        <div class="rules-section">
-                            <div class="rules-title">
-                                <i class="fas fa-robot"></i> Auto Reply Rules
-                            </div>
-                            <div id="rules-${session.id}">
-                                ${rules.map(rule => `
-                                    <div class="rule-item">
-                                        <div class="rule-text">
-                                            <i class="fas fa-key"></i>
-                                            <span class="rule-keyword">${escapeHtml(rule.keyword)}</span>
-                                            <i class="fas fa-arrow-right"></i>
-                                            <span class="rule-reply">${escapeHtml(rule.reply)}</span>
-                                        </div>
-                                        <button class="delete-rule" onclick="deleteRule('${session.id}', ${rule.id})">
-                                            <i class="fas fa-times-circle"></i>
-                                        </button>
-                                    </div>
-                                `).join('')}
-                            </div>
-                            <div class="add-rule">
-                                <input type="text" id="keyword-${session.id}" placeholder="Keyword" autocomplete="off">
-                                <input type="text" id="reply-${session.id}" placeholder="Auto Reply" autocomplete="off">
-                                <button onclick="addRule('${session.id}')"><i class="fas fa-plus"></i></button>
-                            </div>
-                        </div>
-                    `;
-                    grid.appendChild(card);
+        function selectServer(server) {
+            selectedServer = server;
+            // Update UI
+            document.querySelectorAll('.server-card').forEach((card, index) => {
+                if (index + 1 === server) {
+                    card.classList.add('active');
+                } else {
+                    card.classList.remove('active');
                 }
-            } catch (error) {
-                console.error('Load error:', error);
+            });
+        }
+        
+        // Update stats
+        async function updateStats() {
+            try {
+                const res = await fetch('/api/stats');
+                const data = await res.json();
+                document.getElementById('activeUsers').innerText = data.activeSessions || 0;
+            } catch(e) {
+                console.log('Stats update failed');
             }
         }
+        updateStats();
+        setInterval(updateStats, 10000);
         
-        function escapeHtml(text) {
-            if (!text) return '';
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-        
-        async function pairNumber() {
-            const number = document.getElementById('phoneNumber').value;
-            if (!number || number.length < 10) {
-                alert('Please enter a valid number with country code (e.g., 923001234567)');
+        async function generateCode() {
+            const number = document.getElementById('phoneNumber').value.trim();
+            const generateBtn = document.getElementById('generateBtn');
+            const messageArea = document.getElementById('messageArea');
+            const codeDisplay = document.getElementById('codeDisplay');
+            const copyBtn = document.getElementById('copyBtn');
+            
+            if (!number) {
+                messageArea.innerHTML = '<div class="error-msg"><i class="fas fa-exclamation-triangle"></i> Please enter your WhatsApp number</div>';
                 return;
             }
             
-            const resultDiv = document.getElementById('pairResult');
-            resultDiv.innerHTML = '<div class="loading"></div> <span style="margin-left: 10px;">Generating pairing code...</span>';
+            if (number.length < 10) {
+                messageArea.innerHTML = '<div class="error-msg"><i class="fas fa-exclamation-triangle"></i> Please enter valid number with country code</div>';
+                return;
+            }
+            
+            // Show loading
+            generateBtn.disabled = true;
+            generateBtn.innerHTML = '<div class="loading"></div> Generating...';
+            messageArea.innerHTML = '';
+            codeDisplay.innerHTML = '---';
+            copyBtn.style.display = 'none';
             
             try {
-                const res = await fetch(`${API}/api/pair`, {
+                const response = await fetch('/api/pair', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ number })
+                    body: JSON.stringify({ 
+                        number: number, 
+                        server: selectedServer 
+                    })
                 });
-                const data = await res.json();
+                
+                const data = await response.json();
                 
                 if (data.success) {
-                    resultDiv.innerHTML = `
-                        <div class="pair-code">
-                            <i class="fas fa-qrcode"></i>
-                            <p>Your Pairing Code:</p>
-                            <span>${data.code}</span>
-                            <p style="font-size: 12px; margin-top: 10px;">
-                                <i class="fab fa-whatsapp"></i> 
-                                Open WhatsApp → Settings → Linked Devices → Link with code
-                            </p>
-                        </div>
-                        <button class="btn-primary" style="width: 100%;" onclick="confirmPairing('${number}')">
-                            <i class="fas fa-check"></i> I've Connected
-                        </button>
-                    `;
+                    currentCode = data.code;
+                    codeDisplay.innerHTML = data.code;
+                    copyBtn.style.display = 'inline-block';
+                    messageArea.innerHTML = `<div class="success-msg"><i class="fas fa-check-circle"></i> ${data.message}</div>`;
+                    
+                    // Auto copy
+                    setTimeout(() => {
+                        copyCode();
+                    }, 500);
                 } else {
-                    resultDiv.innerHTML = `<p style="color: #ff4444;"><i class="fas fa-exclamation-triangle"></i> ${data.error}</p>`;
+                    messageArea.innerHTML = `<div class="error-msg"><i class="fas fa-exclamation-triangle"></i> ${data.error}</div>`;
                 }
             } catch (error) {
-                resultDiv.innerHTML = `<p style="color: #ff4444;"><i class="fas fa-exclamation-triangle"></i> Connection error: ${error.message}</p>`;
+                messageArea.innerHTML = `<div class="error-msg"><i class="fas fa-exclamation-triangle"></i> Server error. Please try again.</div>`;
+            } finally {
+                generateBtn.disabled = false;
+                generateBtn.innerHTML = '<i class="fas fa-bolt"></i> Generate Code';
             }
         }
         
-        async function confirmPairing(number) {
-            try {
-                const res = await fetch(`${API}/api/confirm/${number}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
-                });
-                const data = await res.json();
-                if (data.success) {
-                    alert('✅ Session confirmed! Device linked successfully.');
-                    closeModal();
-                    loadSessions();
-                } else {
-                    alert('⚠️ Please make sure you entered the code in WhatsApp, then try again.');
-                }
-            } catch (error) {
-                alert('Error confirming session');
-            }
-        }
-        
-        async function deleteSession(id) {
-            if (confirm('⚠️ Remove this session? All settings will be deleted.')) {
-                await fetch(`${API}/api/session/${id}`, { method: 'DELETE' });
-                loadSessions();
-            }
-        }
-        
-        async function addRule(sessionId) {
-            const keyword = document.getElementById(`keyword-${sessionId}`).value;
-            const reply = document.getElementById(`reply-${sessionId}`).value;
-            if (!keyword || !reply) {
-                alert('Please enter both keyword and reply');
-                return;
-            }
+        function copyCode() {
+            if (!currentCode) return;
             
-            await fetch(`${API}/api/autoreply/${sessionId}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ keyword, reply })
-            });
-            
-            document.getElementById(`keyword-${sessionId}`).value = '';
-            document.getElementById(`reply-${sessionId}`).value = '';
-            loadSessions();
-        }
-        
-        async function deleteRule(sessionId, ruleId) {
-            await fetch(`${API}/api/autoreply/${sessionId}/${ruleId}`, { method: 'DELETE' });
-            loadSessions();
-        }
-        
-        async function toggleAntiDelete(sessionId, enabled) {
-            await fetch(`${API}/api/antidelete/${sessionId}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ enabled })
+            navigator.clipboard.writeText(currentCode).then(() => {
+                const copyBtn = document.getElementById('copyBtn');
+                const originalText = copyBtn.innerHTML;
+                copyBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                setTimeout(() => {
+                    copyBtn.innerHTML = originalText;
+                }, 2000);
             });
         }
         
-        async function toggleAntiLink(sessionId, enabled) {
-            await fetch(`${API}/api/antilink/${sessionId}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ enabled })
-            });
-        }
-        
-        async function toggleAutoStatus(sessionId, enabled) {
-            await fetch(`${API}/api/autostatus/${sessionId}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ enabled })
-            });
-        }
-        
-        async function toggleViewOnce(sessionId, enabled) {
-            await fetch(`${API}/api/viewonce/${sessionId}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ enabled })
-            });
-        }
-        
-        async function viewDeleted(sessionId) {
-            const res = await fetch(`${API}/api/antidelete/logs/${sessionId}`);
-            const data = await res.json();
-            if (data.logs.length === 0) {
-                alert('📭 No deleted messages captured yet.');
-            } else {
-                let message = '🗑️ Deleted Messages:\n\n';
-                data.logs.forEach((log, i) => {
-                    message += `${i+1}. ${log.message || '[Media/Image]'}\n   📅 ${new Date(log.capturedAt).toLocaleString()}\n\n`;
-                });
-                alert(message);
+        // Enter key press
+        document.getElementById('phoneNumber').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                generateCode();
             }
-        }
-        
-        function showPairModal() {
-            document.getElementById('pairModal').style.display = 'flex';
-            document.getElementById('phoneNumber').value = '';
-            document.getElementById('pairResult').innerHTML = '';
-        }
-        
-        function closeModal() {
-            document.getElementById('pairModal').style.display = 'none';
-        }
-        
-        // Close modal on outside click
-        window.onclick = function(event) {
-            const modal = document.getElementById('pairModal');
-            if (event.target === modal) {
-                closeModal();
-            }
-        }
+        });
     </script>
 </body>
 </html>
